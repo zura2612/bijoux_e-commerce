@@ -9,3 +9,4 @@ export { LoginPage } from './LoginPage';
 export { RegisterPage } from './RegisterPage';
 export { OrderSuccessPage } from './OrderSuccessPage';
 export { AddressesPage } from './AddressesPage';
+export { ProfilePage } from './ProfilePage';

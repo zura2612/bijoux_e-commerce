@@ -1,3 +1,4 @@
+// fichier frontend/src/pages/admin/AdminClients.tsx
 import { useEffect, useState } from 'react';
 import { api } from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -140,7 +141,7 @@ export function AdminClients() {
         </div>
       )}
 
-      {/* Modal historique commandes */}
+{/* Modal historique commandes */}
       {selectedClient && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={() => setSelectedClient(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-xl w-full p-6 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -157,7 +158,7 @@ export function AdminClients() {
                 {clientOrders.map((order: any) => (
                   <div key={order.id} className="border border-stone-100 rounded-xl p-4">
                     <div className="flex justify-between mb-2">
-                      <span className="font-mono text-xs text-stone-500">#{order.id.slice(0, 8).toUpperCase()}</span>
+                      <span className="font-mono text-xs text-stone-500">#{order.id}</span>
                       <span className="font-bold text-rose-500">{(order.total_cents / 100).toFixed(2)} €</span>
                     </div>
                     {order.items.map((item: any, i: number) => (

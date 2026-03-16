@@ -13,6 +13,7 @@ import { catalogRouter } from './modules/catalog/catalog.router';
 import { cartRouter } from './modules/cart/cart.router';
 import { ordersRouter } from './modules/orders/orders.router';
 import { addressesRouter } from './modules/addresses/addresses.router';
+import { profileRouter } from './modules/profile/profile.router';
 import { adminDashboardRouter } from './modules/admin/admin.dashboard.router';
 import { adminOrdersRouter } from './modules/admin/admin.orders.router';
 import { adminCatalogRouter } from './modules/admin/admin.catalog.router';
@@ -50,6 +51,7 @@ export function createApp(): Application {
   app.use('/api/cart', cartRouter);
   app.use('/api/orders', ordersRouter);
   app.use('/api/addresses', addressesRouter);
+  app.use('/api/profile', profileRouter);
 
   // Routes admin (toutes protégées par requireAdmin dans chaque router)
   app.use('/api/admin/dashboard', adminDashboardRouter);

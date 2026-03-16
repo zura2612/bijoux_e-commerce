@@ -1,3 +1,4 @@
+// fichier frontend/src/App.tsx
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useEffect } from 'react';
@@ -5,7 +6,7 @@ import { Navbar } from './components/layout/Navbar';
 import { AdminLayout } from './components/admin/AdminLayout';
 import {
   HomePage, CatalogPage, ProductPage, CartPage,
-  CheckoutPage, OrdersPage, LoginPage, RegisterPage, OrderSuccessPage, AddressesPage,
+  CheckoutPage, OrdersPage, LoginPage, RegisterPage, OrderSuccessPage, AddressesPage, ProfilePage,
 } from './pages';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminOrders } from './pages/admin/AdminOrders';
@@ -55,13 +56,15 @@ function AppContent() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/addresses" element={<AddressesPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/order-success" element={<OrderSuccessPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
         {/* Routes admin — layout avec sidebar */}
           <Route path="/admin" element={<AdminLayout />}>
-	{/*<Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>*/}
+{/*<Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>*/}
+{/* à décommenter en production */}
           <Route index element={<AdminDashboard />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="catalog" element={<AdminCatalog />} />

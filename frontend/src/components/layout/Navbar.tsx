@@ -77,6 +77,12 @@ export function Navbar() {
                   </Link>
 		  )}
 
+                  {user.role === 'client' && (
+                  <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-rose-50 text-stone-700" onClick={() => setMenuOpen(false)}>
+                    Mon profil
+                  </Link>
+                  )}
+
                   {user.role === 'admin' && (
                     <Link to="/admin" className="block px-4 py-2 text-sm hover:bg-rose-50 text-stone-700" onClick={() => setMenuOpen(false)}>
                       Administration

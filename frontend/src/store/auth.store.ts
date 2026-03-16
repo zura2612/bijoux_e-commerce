@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { api, setAccessToken, getAccessToken } from '../utils/api';
+import { useCartStore } from './cart.store';
 import type { User } from '../types';
 
 interface AuthState {
@@ -53,6 +54,7 @@ console.log('auth.store.ts register');
   logout: async () => {
     await api.post('/auth/logout');
     setAccessToken(null);
+    useCartStore.setState({ cart: { items: [], totalCents: 0 } });
 console.log('auth.store.ts logout');
     set({ user: null });
   },
@@ -60,5 +62,6 @@ console.log('auth.store.ts logout');
 
 window.addEventListener('auth:expired', () => {
   setAccessToken(null);
+  useCartStore.setState({ cart: { items: [], totalCents: 0 } });
   useAuthStore.setState({ user: null });
 });

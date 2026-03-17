@@ -80,7 +80,9 @@ adminClientsRouter.delete('/:id', asyncHandler(async (req: Request, res: Respons
   if (!user) throw new AppError(404, 'Client introuvable');
   if (user.role === 'admin') throw new AppError(403, 'Impossible de supprimer un administrateur');
 
+// Supprimer cette ligne — devenue inutile grâce au ON DELETE CASCADE à la création d'une nouvelle bd
   db.prepare('DELETE FROM cart_items WHERE user_id = ?').run(req.params.id);
+
   db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
   res.json({ success: true });
 }));

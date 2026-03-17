@@ -1,3 +1,4 @@
+// fichier backend/src/modules/cart/cart.router.ts
 import { Router, Request, Response } from 'express';
 import { db } from '../../shared/db/init';
 import { requireAuth } from '../../shared/middleware/auth.middleware';
@@ -8,7 +9,7 @@ export const cartRouter = Router();
 cartRouter.use(requireAuth);
 
 // Création de la table panier si absente (JWT = sans Redis)
-db.exec(`
+/*db.exec(`
   CREATE TABLE IF NOT EXISTS cart_items (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id     TEXT NOT NULL,
@@ -16,7 +17,7 @@ db.exec(`
     quantity    INTEGER NOT NULL DEFAULT 1,
     UNIQUE(user_id, product_id)
   );
-`);
+`);*/
 
 type CartRow = {
   product_id: string;

@@ -88,10 +88,23 @@ export function initDb(): void {
 	counter INTEGER DEFAULT 0
    );
 
+   CREATE TABLE IF NOT EXISTS cart_items (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      product_id  TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+      quantity    INTEGER NOT NULL DEFAULT 1,
+      UNIQUE(user_id, product_id)
+   );
+   CREATE INDEX IF NOT EXISTS idx_cart_user ON cart_items(user_id);
+
+   CREATE TABLE IF NOT EXISTS refresh_token_blacklist (
+     token_hash  TEXT PRIMARY KEY,
+     expires_at  TEXT NOT NULL
+   );
 
   `);
 
-  console.log('  init.ts Base de données initialisée :', env.DB_PATH);
+console.log('  init.ts Base de données initialisée :', env.DB_PATH);
 }
 
 // Exécution directe (npm run db:init)

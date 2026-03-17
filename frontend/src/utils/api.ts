@@ -42,13 +42,10 @@ api.interceptors.response.use(
   async (err) => {
     const original = err.config;
     const isAuthRoute = original.url?.includes('/auth/');
-console.log('api.ts original.url=', original.url );
-console.log('api.ts err.response.status=', err.response.status);
     if (err.response?.status === 401 && !original._retried && !isAuthRoute) {
       original._retried = true;
 
       if (isRefreshing) { 
-console.log('api.ts isRefreshing=', isRefreshing, ' new Promise');
         return new Promise((resolve, reject) => {
           refreshQueue.push((ok) => ok ? resolve(api(original)) : reject(err));
         });
@@ -60,16 +57,13 @@ console.log('api.ts isRefreshing=', isRefreshing, ' new Promise');
 	const {data} = await api.post('/auth/refresh', {}, { timeout: TIMEOUT.SHORT });
         setAccessToken(data.accessToken);
         refreshQueue.forEach(cb => cb(true));
-console.log('api.ts try ok');
         return api(original);
       } catch {
         refreshQueue.forEach(cb => cb(false));
         setAccessToken(null);
         window.dispatchEvent(new Event('auth:expired'));
-console.log('api.ts catch');
         return Promise.reject(new Error('api.ts Session expirée'));
       } finally {
-console.log('api.ts finally');
         isRefreshing = false;
         refreshQueue = [];
       }

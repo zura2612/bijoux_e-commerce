@@ -17,6 +17,10 @@ import { useCartStore } from './store/cart.store';
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuthStore();
+
+// Attendre que fetchMe() ait fini avant de juger
+  if (loading) return null;
+
   if (!user || user.role !== 'admin') {
     return <Navigate to="/login" replace />;
   }
@@ -62,8 +66,8 @@ function AppContent() {
         <Route path="/register" element={<RegisterPage />} />
 
         {/* Routes admin — layout avec sidebar */}
-          <Route path="/admin" element={<AdminLayout />}>
-{/*<Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>*/}
+       <Route path="/admin" element={<AdminLayout />}>
+{/*	<Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}> */}
 {/* à décommenter en production */}
           <Route index element={<AdminDashboard />} />
           <Route path="orders" element={<AdminOrders />} />

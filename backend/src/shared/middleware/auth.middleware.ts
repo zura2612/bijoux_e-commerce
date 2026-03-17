@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../errors/AppError';
 import { verifyAccessToken, type TokenPayload } from '../tokens/tokens.service';
 import { db } from '../db/init';
+import type { UserRow } from '../db/db.types';
 
 declare global {
   namespace Express {
@@ -26,9 +27,8 @@ async function authenticateUser(req: Request): Promise<TokenPayload> {
   if (!token) throw new AppError(401, 'authenticateUser token=null Authentification requise');
   
   const payload = await verifyAccessToken(token);
-  const user = db
-    .prepare('SELECT blocked FROM users WHERE id = ?')
-    .get(payload.userId) as any;
+//  const user = db.prepare('SELECT blocked FROM users WHERE id = ?').get(payload.userId) as any;
+  const user = db.prepare('SELECT blocked FROM users WHERE id = ?').get<Pick<UserRow, 'blocked'>>(payload.userId);
     
   if (!user) throw new AppError(401, 'authenticateUser user=null Compte introuvable');
   if (user.blocked) throw new AppError(403, 'authenticateUser user.blocked=true Compte suspendu');

@@ -96,7 +96,7 @@ const text = `
     À bientôt avec ${shopName}
     `;
 
-console.log('mailer.service.ts adresse=', data.address );
+//console.log('mailer.service.ts adresse=', data.address );
 
    try {
     await transporter.sendMail({

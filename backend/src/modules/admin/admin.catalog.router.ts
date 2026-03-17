@@ -85,6 +85,11 @@ adminCatalogRouter.post('/products', upload.single('image'), asyncHandler(async 
   res.status(201).json({ success: true, data: { id, ...data, image_url: imageUrl } });
 }));
 
+// Whitelist des colonnes autorisées pour UPDATE
+const PRODUCT_UPDATABLE_FIELDS = new Set([
+  'name', 'description', 'price_cents', 'stock', 'category_id', 'image_url', 'is_new'
+]);
+
 // PUT /api/admin/catalog/products/:id
 adminCatalogRouter.put('/products/:id', upload.single('image'), asyncHandler(async (req: Request, res: Response) => {
   const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id) as any;
@@ -100,9 +105,15 @@ adminCatalogRouter.put('/products/:id', upload.single('image'), asyncHandler(asy
     }
     (data as any).image_url = `/images/products/${req.file.filename}`;
   }
+// Filtrer sur la whitelist avant de construire la requête
+  const safeEntries = Object.entries(data).filter(([k]) => PRODUCT_UPDATABLE_FIELDS.has(k));
+  if (safeEntries.length === 0) throw new AppError(400, 'Aucun champ valide à mettre à jour');
 
-  const fields = Object.keys(data).map(k => `${k} = ?`).join(', ');
-  const values = [...Object.values(data), req.params.id];
+//  const fields = Object.keys(data).map(k => `${k} = ?`).join(', ');
+  const fields = safeEntries.map(([k]) => `${k} = ?`).join(', ');
+//  const values = [...Object.values(data), req.params.id];
+  const values = [...safeEntries.map(([, v]) => v), req.params.id];
+
   db.prepare(`UPDATE products SET ${fields} WHERE id = ?`).run(...values);
 
   res.json({ success: true });

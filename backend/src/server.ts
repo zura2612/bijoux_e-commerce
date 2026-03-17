@@ -3,10 +3,27 @@ import { createServer } from 'http';
 import { createApp } from './app';
 import { initDb, db } from './shared/db/init';
 import { env } from './config/env';
+import { logger } from './shared/utils/logger';
+
+// Purge des refresh tokens expirés — toutes les 24h
+function scheduleBlacklistCleanup(): void {
+  const purge = () => {
+  const result = db.prepare(
+      'DELETE FROM refresh_token_blacklist WHERE expires_at <= ?'
+    ).run(new Date().toISOString());    
+
+    logger.info('Purge blacklist tokens', { deleted: result.changes });
+  };
+
+  purge(); // Une première fois au démarrage
+  setInterval(purge, 24 * 60 * 60 * 1000);
+}
 
 async function main() {
   initDb();
 console.log('l\'initialisation de la base de données terminée avec db/init.ts/initDb()');
+  scheduleBlacklistCleanup();
+console.log('Purge toutes les 24heures des refresh tokens expirés lancée');
 
   const app = createApp();
   const server = createServer(app);

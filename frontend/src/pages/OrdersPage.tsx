@@ -1,3 +1,4 @@
+// fichier frontend/src/pages/Orders.Page.tsx
 import { useEffect, useState } from 'react';
 import { api } from '../utils/api';
 import type { Order } from '../types';
@@ -28,7 +29,7 @@ export function OrdersPage() {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <p className="font-mono text-sm font-medium text-stone-700">
-                    #{order.id.slice(0, 8).toUpperCase()}
+                    #{order.id}
                   </p>
                   <p className="text-xs text-stone-400 mt-0.5">
                     {new Date(order.created_at).toLocaleDateString('fr-FR', {

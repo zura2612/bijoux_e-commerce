@@ -1,4 +1,4 @@
-// fichier backend/src/modules/catalog/catalo.router.ts
+// fichier backend/src/modules/catalog/catalog.router.ts
 import { Router, Request, Response } from 'express';
 import { db } from '../../shared/db/init';
 import { asyncHandler } from '../../shared/errors/AppError';
@@ -89,18 +89,33 @@ catalogRouter.post('/products', requireAdmin, asyncHandler(async (req: Request, 
   const id = uuid();
   db.prepare(`
     INSERT INTO products (id, name, description, price_cents, stock, category_id, image_url, is_new)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(id, data.name, data.description ?? '', data.price_cents, data.stock, data.category_id, data.image_url ?? '', data.is_new ? 1 : 0);
 
   res.status(201).json({ success: true, data: { id, ...data } });
 }));
 
+const PRODUCT_UPDATABLE_FIELDS = new Set([
+  'name', 'description', 'price_cents', 'stock', 'category_id', 'image_url', 'is_new'
+]);
+
 // PUT /api/catalog/products/:id (admin)
 catalogRouter.put('/products/:id', requireAdmin, asyncHandler(async (req: Request, res: Response) => {
   const data = ProductSchema.partial().parse(req.body);
-  const fields = Object.keys(data).map(k => `${k} = ?`).join(', ');
+
+// Filtrer sur la whitelist + convertir boolean → 0/1
+  const safeEntries = Object.entries(data)
+    .filter(([k]) => PRODUCT_UPDATABLE_FIELDS.has(k))
+    .map(([k, v]) => [k, typeof v === 'boolean' ? (v ? 1 : 0) : v]);
+
+if (safeEntries.length === 0) throw new AppError(400, 'Aucun champ valide à mettre à jour');
+
+  const fields = safeEntries.map(([k]) => `${k} = ?`).join(', ');
+  const values = [...safeEntries.map(([, v]) => v), req.params.id];
+
+//  const fields = Object.keys(data).map(k => `${k} = ?`).join(', ');
 //  const values = [...Object.values(data), req.params.id];
-  const values = [...Object.values(data).map(v => (typeof v === 'boolean' ? ( v ? 1 : 0) : v)), req.params.id];
+//  const values = [...Object.values(data).map(v => (typeof v === 'boolean' ? ( v ? 1 : 0) : v)), req.params.id];
 
   db.prepare(`UPDATE products SET ${fields} WHERE id = ?`).run(...values);
   res.json({ success: true });

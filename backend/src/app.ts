@@ -24,11 +24,17 @@ export function createApp(): Application {
 
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
-  app.use(cors({
+/*  app.use(cors({
     origin: [env.FRONTEND_URL, env.GROK_FRONTEND_URL],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  }));
+  }));*/
+
+const allowedOrigins = [env.FRONTEND_URL, env.GROK_FRONTEND_URL].filter(Boolean) as string[];
+   app.use(cors({
+     origin: allowedOrigins, credentials: true,
+     methods: ['GET', 'POST', 'PUT', 'DELETE'],
+   }));
 
   app.use(compression());
   app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));

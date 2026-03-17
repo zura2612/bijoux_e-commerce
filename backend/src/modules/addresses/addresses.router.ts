@@ -64,6 +64,11 @@ addressesRouter.post('/', asyncHandler(async (req: Request, res: Response) => {
   res.status(201).json({ success: true, data: address });
 }));
 
+// Whitelist des colonnes autorisées pour UPDATE — à placer après AddressSchema
+  const ADDRESS_UPDATABLE_FIELDS = new Set([
+  'label', 'first_name', 'last_name', 'line1', 'line2',
+  'postal_code', 'city', 'country', 'is_default'
+  ]);
 // PUT /api/addresses/:id
 addressesRouter.put('/:id', asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
@@ -72,17 +77,28 @@ addressesRouter.put('/:id', asyncHandler(async (req: Request, res: Response) => 
 
   const data = AddressSchema.partial().parse(req.body);
 
-  if (data.is_default) {
+// Si is_default, retirer le flag des autres adresses en premier  
+if (data.is_default) {
     db.prepare('UPDATE addresses SET is_default = 0 WHERE user_id = ?').run(userId);
   }
 
-  const fields = Object.keys(data)
+/*  const fields = Object.keys(data)
     .map(k => `${k === 'is_default' ? 'is_default' : k} = ?`)
     .join(', ');
   const values = Object.values(data).map(v => (typeof v === 'boolean' ? (v ? 1 : 0) : v));
-  values.push(req.params.id, userId);
+  values.push(req.params.id, userId);*/
 
-  db.prepare(`UPDATE addresses SET ${fields} WHERE id = ? AND user_id = ?`).run(...values);
+// Filtrer sur la whitelist + convertir boolean → 0/1
+  const safeEntries = Object.entries(data)
+    .filter(([k]) => ADDRESS_UPDATABLE_FIELDS.has(k))
+    .map(([k, v]) => [k, typeof v === 'boolean' ? (v ? 1 : 0) : v]);
+
+if (safeEntries.length === 0) throw new AppError(400, 'Aucun champ valide à mettre à jour');
+
+  const fields = safeEntries.map(([k]) => `${k} = ?`).join(', ');
+  const values = [...safeEntries.map(([, v]) => v), req.params.id, userId];
+  
+db.prepare(`UPDATE addresses SET ${fields} WHERE id = ? AND user_id = ?`).run(...values);
 
   res.json({ success: true, data: db.prepare('SELECT * FROM addresses WHERE id = ?').get(req.params.id) });
 }));

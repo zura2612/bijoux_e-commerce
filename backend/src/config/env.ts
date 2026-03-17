@@ -1,3 +1,4 @@
+// fichier backend/src/config/env.ts
 import { z } from 'zod';
 import dotenv from 'dotenv';
 
@@ -14,6 +15,7 @@ const EnvSchema = z.object({
   GMAIL_USER: z.string().email(),
   GMAIL_APP_PASSWORD: z.string().min(1),
   FRONTEND_URL: z.string().url().default('http://localhost:5173'),
+  GROK_FRONTEND_URL: z.string().url().optional(),
   SHOP_NAME: z.string().default('nom de la société'),
   SHOP_DESCRIPTION: z.string().default('description'),
 });

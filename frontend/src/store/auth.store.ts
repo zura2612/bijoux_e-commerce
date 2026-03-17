@@ -1,3 +1,4 @@
+// fichier frontend/src/store/auth.store.ts
 import { create } from 'zustand';
 import { api, setAccessToken, getAccessToken } from '../utils/api';
 import { useCartStore } from './cart.store';
@@ -21,16 +22,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       // Étape 1 : tenter un refresh pour obtenir un access token frais
       // (nécessaire après un reload de page car le token en mémoire est perdu)
       const refreshRes = await api.post('/auth/refresh');
-//console.log('auth.store.ts fetchMe api.post /auth/refresh');
       setAccessToken(refreshRes.data.accessToken);
 
       // Étape 2 : récupérer les infos utilisateur avec le token frais
       const meRes = await api.get('/auth/me');
-//console.log('auth.store.ts fetchMe api.get /auth/me');
       set({ user: meRes.data.user, loading: false });
     } catch {
       // Pas de refresh token valide → non connecté
-//console.log('auth.store.ts fetchMe non connecté');
       setAccessToken(null);
       set({ user: null, loading: false });
     }
@@ -41,7 +39,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     setAccessToken(data.accessToken);
 console.log('auth.store.ts login');
     set({ user: data.user });
-console.log('auth.store.ts data.user=', data.user );
   },
 
   register: async (payload) => {
@@ -54,6 +51,7 @@ console.log('auth.store.ts register');
   logout: async () => {
     await api.post('/auth/logout');
     setAccessToken(null);
+// pour mise à vide du panier qui sera affiché
     useCartStore.setState({ cart: { items: [], totalCents: 0 } });
 console.log('auth.store.ts logout');
     set({ user: null });
@@ -62,6 +60,7 @@ console.log('auth.store.ts logout');
 
 window.addEventListener('auth:expired', () => {
   setAccessToken(null);
+// pour mise à vide du panier qui sera affiché
   useCartStore.setState({ cart: { items: [], totalCents: 0 } });
   useAuthStore.setState({ user: null });
 });

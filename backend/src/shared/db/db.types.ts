@@ -53,6 +53,7 @@ export interface OrderRow {
   address: string;
   created_at: string;
   paid_at: string | null;
+  tracking_number: string | null;
 }
 
 export interface OrderItemRow {

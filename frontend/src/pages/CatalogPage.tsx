@@ -1,20 +1,23 @@
+// fichier frontend/src/pages/CatalogPage.tsx
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../utils/api';
 import { ProductCard } from '../components/catalog/ProductCard';
-import type { Product, Category, Pagination } from '../types';
+import { Pagination } from '../components/ui/Pagination';
+import type { Product, Category, PaginationType } from '../types';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 export function CatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [pagination, setPagination] = useState<PaginationType | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get('search') ?? '');
 
   const category = searchParams.get('category') ?? '';
   const page = Number(searchParams.get('page') ?? 1);
+  const PAGE_SIZE = Number(import.meta.env.VITE_CATALOG_PAGE_SIZE ?? 8); // par défaut 8
 
   useEffect(() => {
     api.get('/catalog/categories').then(({ data }) => setCategories(data.data));
@@ -24,9 +27,9 @@ export function CatalogPage() {
     setLoading(true);
     const params = new URLSearchParams();
     if (category) params.set('category', category);
-    if (search) params.set('search', search);
+    if (search)   params.set('search', search);
     params.set('page', String(page));
-    params.set('limit', '8');
+    params.set('limit', String(PAGE_SIZE));
 
     api.get(`/catalog/products?${params}`).then(({ data }) => {
       setProducts(data.data);
@@ -35,12 +38,25 @@ export function CatalogPage() {
   }, [category, page, search]);
 
   const setCategory = (slug: string) => {
+    // Réinitialiser page à 1 lors d'un changement de catégorie
     setSearchParams(slug ? { category: slug } : {});
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    // Réinitialiser page à 1 lors d'une nouvelle recherche
     setSearchParams(search ? { search } : {});
+  };
+
+  const handlePageChange = (newPage: number) => {
+    // Conserver les filtres actifs en changeant uniquement la page
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('page', String(newPage));
+      return next;
+    });
+    // Remonter en haut de la liste au changement de page
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -60,7 +76,10 @@ export function CatalogPage() {
                 placeholder="Rechercher..."
                 className="input-field pr-10"
               />
-              <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-rose-400">
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-rose-400"
+              >
                 <MagnifyingGlassIcon className="w-5 h-5" />
               </button>
             </div>
@@ -76,7 +95,9 @@ export function CatalogPage() {
                 <button
                   onClick={() => setCategory('')}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                    !category ? 'bg-rose-100 text-rose-600 font-medium' : 'hover:bg-stone-100 text-stone-600'
+                    !category
+                      ? 'bg-rose-100 text-rose-600 font-medium'
+                      : 'hover:bg-stone-100 text-stone-600'
                   }`}
                 >
                   Tous les bijoux
@@ -87,7 +108,9 @@ export function CatalogPage() {
                   <button
                     onClick={() => setCategory(cat.slug)}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                      category === cat.slug ? 'bg-rose-100 text-rose-600 font-medium' : 'hover:bg-stone-100 text-stone-600'
+                      category === cat.slug
+                        ? 'bg-rose-100 text-rose-600 font-medium'
+                        : 'hover:bg-stone-100 text-stone-600'
                     }`}
                   >
                     {cat.name}
@@ -123,6 +146,7 @@ export function CatalogPage() {
               <p className="text-sm text-stone-400 mb-4">
                 {pagination?.total} résultat{pagination && pagination.total > 1 ? 's' : ''}
               </p>
+
               <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product} />
@@ -130,20 +154,12 @@ export function CatalogPage() {
               </div>
 
               {/* Pagination */}
-              {pagination && pagination.totalPages > 1 && (
-                <div className="flex justify-center gap-2 mt-8">
-                  {[...Array(pagination.totalPages)].map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setSearchParams({ ...Object.fromEntries(searchParams), page: String(i + 1) })}
-                      className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
-                        page === i + 1 ? 'bg-rose-400 text-white' : 'bg-white border hover:bg-rose-50 text-stone-600'
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                </div>
+              {pagination && (
+                <Pagination
+                  page={page}
+                  totalPages={pagination.totalPages}
+                  onChange={handlePageChange}
+                />
               )}
             </>
           )}

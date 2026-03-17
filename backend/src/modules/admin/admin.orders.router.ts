@@ -1,3 +1,4 @@
+// fichier backend/src/modules/admin/admin.orders.router.ts
 import { Router, Request, Response } from 'express';
 import { db } from '../../shared/db/init';
 import { requireAdmin } from '../../shared/middleware/auth.middleware';
@@ -93,24 +94,40 @@ adminOrdersRouter.put('/:id/status', asyncHandler(async (req: Request, res: Resp
   res.json({ success: true, status, statusLabel: STATUS_LABELS[status] });
 }));
 
+// PUT /api/admin/orders/:id/tracking
+adminOrdersRouter.put('/:id/tracking', asyncHandler(async (req: Request, res: Response) => {
+  const { tracking_number } = z.object({
+    tracking_number: z.string().max(100).nullable(),
+  }).parse(req.body);
+
+  const order = db.prepare('SELECT id, status FROM orders WHERE id = ?').get(req.params.id) as any;
+  if (!order) throw new AppError(404, 'Commande introuvable');
+
+  db.prepare('UPDATE orders SET tracking_number = ? WHERE id = ?')
+    .run(tracking_number, req.params.id);
+
+  res.json({ success: true, tracking_number });
+}));
+
 // GET /api/admin/orders/export.csv
 adminOrdersRouter.get('/export.csv', asyncHandler(async (_req: Request, res: Response) => {
   const orders = db.prepare(`
     SELECT o.id, o.status, o.total_cents, o.created_at, o.address,
-           u.email, u.first_name, u.last_name
+           o.tracking_number, u.email, u.first_name, u.last_name
     FROM orders o
     JOIN users u ON u.id = o.user_id
     ORDER BY o.created_at DESC
   `).all() as any[];
 
-  const header = 'ID,Statut,Client,Email,Total (€),Adresse,Date\n';
+  const header = 'ID,Statut,Client,Email,Total (€),Numéro de suivi,Adresse,Date\n';
   const rows = orders.map(o =>
     [
-      o.id.slice(0, 8).toUpperCase(),
+      o.id,
       STATUS_LABELS[o.status as OrderStatus] ?? o.status,
       `"${o.first_name} ${o.last_name}"`,
       o.email,
       (o.total_cents / 100).toFixed(2),
+      o.tracking_number ?? '',
       `"${o.address.replace(/\n/g, ' ')}"`,
       new Date(o.created_at).toLocaleDateString('fr-FR'),
     ].join(',')

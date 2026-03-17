@@ -6,7 +6,8 @@ import { Navbar } from './components/layout/Navbar';
 import { AdminLayout } from './components/admin/AdminLayout';
 import {
   HomePage, CatalogPage, ProductPage, CartPage,
-  CheckoutPage, OrdersPage, LoginPage, RegisterPage, OrderSuccessPage, AddressesPage, ProfilePage,
+  CheckoutPage, OrdersPage, OrderDetailPage, LoginPage, RegisterPage,
+  OrderSuccessPage, AddressesPage, ProfilePage,
 } from './pages';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminOrders } from './pages/admin/AdminOrders';
@@ -16,9 +17,8 @@ import { useAuthStore } from './store/auth.store';
 import { useCartStore } from './store/cart.store';
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user } = useAuthStore();
+  const { user, loading } = useAuthStore();
 
-// Attendre que fetchMe() ait fini avant de juger
   if (loading) return null;
 
   if (!user || user.role !== 'admin') {
@@ -36,7 +36,7 @@ function AppContent() {
 
   useEffect(() => { fetchMe(); }, []);
   useEffect(() => { if (user) fetchCart(); }, [user]);
-//console.log('App.tsx location.pathname=', location.pathname );
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -59,16 +59,15 @@ function AppContent() {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/orders/:id" element={<OrderDetailPage />} />
         <Route path="/addresses" element={<AddressesPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/order-success" element={<OrderSuccessPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
-        {/* Routes admin — layout avec sidebar */}
-       <Route path="/admin" element={<AdminLayout />}>
-{/*	<Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}> */}
-{/* à décommenter en production */}
+        {/* Routes admin — protégées par AdminRoute */}
+        <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
           <Route index element={<AdminDashboard />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="catalog" element={<AdminCatalog />} />
@@ -87,9 +86,9 @@ function AppContent() {
 
       <Toaster position="top-left" toastOptions={{
         style: { background: 'grey', color: 'white', borderRadius: '12px', fontSize: '18px' },
-	duration: 4000,
+        duration: 4000,
         success: { iconTheme: { primary: 'green', secondary: 'white' } },
-	error: { iconTheme: { primary: 'red', secondary: 'white' } },
+        error: { iconTheme: { primary: 'red', secondary: 'white' } },
       }} />
     </>
   );

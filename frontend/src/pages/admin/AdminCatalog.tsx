@@ -1,6 +1,10 @@
-// frontend/src/pages/admin/AdminCatalog.tsx
+// fichier frontend/src/pages/admin/AdminCatalog.tsx
 import { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../../utils/api';
+import { Pagination } from '../../components/ui/Pagination';
+import { useAuthStore } from '../../store/auth.store';
+import type { PaginationType } from '../../types';
 import toast from 'react-hot-toast';
 import { PlusIcon, PencilIcon, TrashIcon, StarIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
@@ -33,21 +37,28 @@ const emptyForm = {
 };
 
 export function AdminCatalog() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [pagination, setPagination] = useState<any>(null);
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [tab, setTab] = useState<'products' | 'categories'>('products');
-  const [showForm, setShowForm] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuthStore();
+  const [products, setProducts]       = useState<Product[]>([]);
+  const [categories, setCategories]   = useState<Category[]>([]);
+  const [pagination, setPagination]   = useState<PaginationType | null>(null);
+  const [search, setSearch]           = useState(searchParams.get('search') ?? '');
+  const [tab, setTab]                 = useState<'products' | 'categories'>('products');
+  const [showForm, setShowForm]       = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
-  const [form, setForm] = useState(emptyForm);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [newCatName, setNewCatName] = useState('');
+  const [form, setForm]               = useState(emptyForm);
+  const [imageFile, setImageFile]     = useState<File | null>(null);
+  const [newCatName, setNewCatName]   = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const fetchProducts = async () => {
-    const params = new URLSearchParams({ page: String(page), limit: '12' });
+  const page = Math.max(1, Number(searchParams.get('page') ?? 1));
+  const ADMIN_PAGE_SIZE = Number(import.meta.env.VITE_ADMIN_CATALOG_PAGE_SIZE ?? 12);// par défaut 12
+
+
+  const fetchProducts = async (currentPage = page) => {
+//  const params = new URLSearchParams({ page: String(currentPage), limit: '12' });
+    const params = new URLSearchParams({ page: String(currentPage), limit: String(ADMIN_PAGE_SIZE) });
+
     if (search) params.set('search', search);
     const { data } = await api.get(`/admin/catalog/products?${params}`);
     setProducts(data.data);
@@ -59,13 +70,37 @@ export function AdminCatalog() {
     setCategories(data.data);
   };
 
+  // Conditionnés à user — ne partent pas tant que fetchMe() n'a pas terminé
   useEffect(() => {
+    if (!user) return;
     fetchProducts();
-  }, [page, search]);
+  }, [page, search, user]);
 
   useEffect(() => {
+    if (!user) return;
     fetchCategories();
-  }, []);
+  }, [user]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('page', '1');
+      if (search) next.set('search', search);
+      else next.delete('search');
+      return next;
+    });
+    fetchProducts(1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('page', String(newPage));
+      return next;
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const openCreate = () => {
     setEditProduct(null);
@@ -87,7 +122,6 @@ export function AdminCatalog() {
     setShowForm(true);
   };
 
-// ajouter un produit
   const handleSubmit = async () => {
     const fd = new FormData();
     fd.append('name', form.name);
@@ -115,7 +149,6 @@ export function AdminCatalog() {
     }
   };
 
-// supprimer un produit
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Supprimer "${name}" ?`)) return;
     try {
@@ -127,31 +160,30 @@ export function AdminCatalog() {
     }
   };
 
-// modifier le stock du produit
-    const handleStockChange = async (id: string, name: string, stock: number) => {
+  const handleStockChange = async (id: string, name: string, stock: number) => {
     try {
       await api.put(`/admin/catalog/products/${id}/stock`, { stock });
-      toast.success(`Stock du produit "${name}" mis à jour`);
+      toast.success(`Stock de "${name}" mis à jour`);
       setProducts(ps => ps.map(p => p.id === id ? { ...p, stock } : p));
     } catch (err: any) {
       toast.error(err.message);
     }
   };
 
-// Toggle pour marquer/démarquer un produit comme nouveauté
   const handleToggleNew = async (id: string, name: string, currentIsNew: boolean) => {
     try {
       await api.patch(`/catalog/products/${id}/toggle-new`);
-      setProducts(ps =>
-        ps.map(p => p.id === id ? { ...p, is_new: !currentIsNew } : p)
+      setProducts(ps => ps.map(p => p.id === id ? { ...p, is_new: !currentIsNew } : p));
+      toast.success(
+        currentIsNew
+          ? `"${name}" retiré des nouveautés`
+          : `"${name}" marqué comme nouveauté`
       );
-      toast.success(currentIsNew ? `Produit "${name}" marqué comme standard` : `Produit "${name}" marqué comme nouveauté`);
     } catch (err: any) {
       toast.error(err.message);
     }
   };
 
-// ajouter une catégorie
   const handleAddCategory = async () => {
     if (!newCatName.trim()) return;
     try {
@@ -164,7 +196,6 @@ export function AdminCatalog() {
     }
   };
 
-// supprimer une catégorie
   const handleDeleteCategory = async (id: number, name: string) => {
     if (!confirm(`Supprimer la catégorie "${name}" ?`)) return;
     try {
@@ -178,9 +209,7 @@ export function AdminCatalog() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-serif text-2xl font-semibold text-stone-800">Catalogue</h1>
-      </div>
+      <h1 className="font-serif text-2xl font-semibold text-stone-800">Catalogue</h1>
 
       {/* Tabs */}
       <div className="flex gap-2">
@@ -202,22 +231,27 @@ export function AdminCatalog() {
         </button>
       </div>
 
+      {/* Onglet Produits */}
       {tab === 'products' && (
         <>
           <div className="flex gap-3">
-            <input
-              type="text"
-              value={search}
-              onChange={e => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Rechercher un produit..."
-              className="input-field text-sm w-56"
-            />
+            <form onSubmit={handleSearch} className="relative">
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Rechercher un produit..."
+                className="input-field text-sm w-56"
+              />
+            </form>
             <button onClick={openCreate} className="btn-primary flex items-center gap-2 text-sm">
               <PlusIcon className="w-4 h-4" /> Ajouter
             </button>
+            {pagination && (
+              <span className="text-sm text-stone-400 self-center">
+                {pagination.total} produit{pagination.total > 1 ? 's' : ''}
+              </span>
+            )}
           </div>
 
           <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
@@ -225,10 +259,7 @@ export function AdminCatalog() {
               <thead className="bg-stone-50 border-b border-stone-200">
                 <tr>
                   {['Image', 'Nom', 'Catégorie', 'Prix', 'Stock', 'Nouveauté', 'Actions'].map(h => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase"
-                    >
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase">
                       {h}
                     </th>
                   ))}
@@ -258,7 +289,6 @@ export function AdminCatalog() {
                         className="w-16 border rounded px-2 py-1 text-sm text-center"
                       />
                     </td>
-                    {/* Colonne Toggle Nouveautés */}
                     <td className="px-4 py-3">
                       <button
                         onClick={() => handleToggleNew(p.id, p.name, p.is_new ?? false)}
@@ -267,28 +297,21 @@ export function AdminCatalog() {
                             ? 'bg-rose-100 text-rose-600 border-rose-200 hover:bg-rose-200'
                             : 'bg-stone-100 text-stone-600 border-stone-200 hover:bg-rose-50 hover:border-rose-200'
                         }`}
-                        title={p.is_new ? 'Cliquer pour retirer le badge nouveauté' : 'Cliquer pour marquer comme nouveauté'}
+                        title={p.is_new ? 'Retirer le badge nouveauté' : 'Marquer comme nouveauté'}
                       >
-                        {p.is_new ? (
-                          <StarIconSolid className="w-3.5 h-3.5" />
-                        ) : (
-                          <StarIcon className="w-3.5 h-3.5" />
-                        )}
+                        {p.is_new
+                          ? <StarIconSolid className="w-3.5 h-3.5" />
+                          : <StarIcon className="w-3.5 h-3.5" />
+                        }
                         {p.is_new ? 'Nouveauté' : 'Marquer'}
                       </button>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => openEdit(p)}
-                          className="text-stone-400 hover:text-blue-500"
-                        >
+                        <button onClick={() => openEdit(p)} className="text-stone-400 hover:text-blue-500">
                           <PencilIcon className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => handleDelete(p.id, p.name)}
-                          className="text-stone-400 hover:text-red-500"
-                        >
+                        <button onClick={() => handleDelete(p.id, p.name)} className="text-stone-400 hover:text-red-500">
                           <TrashIcon className="w-4 h-4" />
                         </button>
                       </div>
@@ -299,24 +322,18 @@ export function AdminCatalog() {
             </table>
           </div>
 
-          {pagination && pagination.totalPages > 1 && (
-            <div className="flex gap-2 justify-center">
-              {[...Array(pagination.totalPages)].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setPage(i + 1)}
-                  className={`w-8 h-8 rounded text-sm ${
-                    page === i + 1 ? 'bg-rose-400 text-white' : 'bg-white border text-stone-600'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
+          {/* Pagination */}
+          {pagination && (
+            <Pagination
+              page={page}
+              totalPages={pagination.totalPages}
+              onChange={handlePageChange}
+            />
           )}
         </>
       )}
 
+      {/* Onglet Catégories */}
       {tab === 'categories' && (
         <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-4">
           <div className="flex gap-3">
@@ -365,9 +382,7 @@ export function AdminCatalog() {
               <h2 className="font-semibold text-stone-800">
                 {editProduct ? 'Modifier le produit' : 'Nouveau produit'}
               </h2>
-              <button onClick={() => setShowForm(false)} className="text-stone-400 text-xl">
-                ×
-              </button>
+              <button onClick={() => setShowForm(false)} className="text-stone-400 text-xl">×</button>
             </div>
             <div className="space-y-3">
               <div>
@@ -418,9 +433,7 @@ export function AdminCatalog() {
                 >
                   <option value="">Choisir...</option>
                   {categories.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
+                    <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
               </div>
@@ -439,9 +452,7 @@ export function AdminCatalog() {
               </div>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={() => setShowForm(false)} className="btn-secondary flex-1">
-                Annuler
-              </button>
+              <button onClick={() => setShowForm(false)} className="btn-secondary flex-1">Annuler</button>
               <button onClick={handleSubmit} className="btn-primary flex-1">
                 {editProduct ? 'Enregistrer' : 'Créer'}
               </button>

@@ -58,6 +58,7 @@ export interface OrderItem {
   name: string;
   quantity: number;
   unitPriceCents: number;
+  image_url?: string;
 }
 
 export interface Order {
@@ -67,10 +68,11 @@ export interface Order {
   total_cents: number;
   address: string;
   created_at: string;
+  tracking_number: string | null;
   items: OrderItem[];
 }
 
-export interface Pagination {
+export interface PaginationType {
   total: number;
   page: number;
   limit: number;

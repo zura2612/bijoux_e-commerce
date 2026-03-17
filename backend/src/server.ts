@@ -2,6 +2,7 @@
 import { createServer } from 'http';
 import { createApp } from './app';
 import { initDb, db } from './shared/db/init';
+import { migration2Db } from './shared/db/migration2';
 import { env } from './config/env';
 import { logger } from './shared/utils/logger';
 
@@ -21,6 +22,7 @@ function scheduleBlacklistCleanup(): void {
 
 async function main() {
   initDb();
+  migration2Db();
   scheduleBlacklistCleanup();
 logger.info('l\'initialisation de la base de données terminée avec db/init.ts/initDb()');
 logger.info('Purge blacklist tokens planifiée toutes les 24h');

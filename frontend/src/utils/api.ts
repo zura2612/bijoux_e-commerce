@@ -41,7 +41,9 @@ api.interceptors.response.use(
   (res) => res,
   async (err) => {
     const original = err.config;
-    const isAuthRoute = original.url?.includes('/auth/');
+//    const isAuthRoute = original.url?.includes('/auth/');
+      const isAuthRoute = original.url?.includes('/auth/') || original.url?.includes('/admin/');
+
     if (err.response?.status === 401 && !original._retried && !isAuthRoute) {
       original._retried = true;
 

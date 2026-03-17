@@ -8,17 +8,6 @@ import { z } from 'zod';
 export const cartRouter = Router();
 cartRouter.use(requireAuth);
 
-// Création de la table panier si absente (JWT = sans Redis)
-/*db.exec(`
-  CREATE TABLE IF NOT EXISTS cart_items (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id     TEXT NOT NULL,
-    product_id  TEXT NOT NULL REFERENCES products(id),
-    quantity    INTEGER NOT NULL DEFAULT 1,
-    UNIQUE(user_id, product_id)
-  );
-`);*/
-
 type CartRow = {
   product_id: string;
   name: string;

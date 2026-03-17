@@ -16,23 +16,20 @@ function scheduleBlacklistCleanup(): void {
   };
 
   purge(); // Une première fois au démarrage
-  setInterval(purge, 24 * 60 * 60 * 1000);
+  setInterval(purge, 24 * 60 * 60 * 1000);// puis toutes les 24 heures
 }
 
 async function main() {
   initDb();
-console.log('l\'initialisation de la base de données terminée avec db/init.ts/initDb()');
   scheduleBlacklistCleanup();
-console.log('Purge toutes les 24heures des refresh tokens expirés lancée');
+logger.info('l\'initialisation de la base de données terminée avec db/init.ts/initDb()');
+logger.info('Purge blacklist tokens planifiée toutes les 24h');
 
   const app = createApp();
   const server = createServer(app);
 
   server.listen(env.PORT, () => {
-    console.log(`\n  -> e-commerce-claude server Backend démarré`);
-    console.log(`   → http://localhost:${env.PORT}`);
-    console.log(`   → Env: ${env.NODE_ENV}`);
-    console.log(`   → Auth: JWT (stateless, httpOnly cookies)\n`);
+      logger.info(`Serveur démarré sur http://localhost:${env.PORT} [${env.NODE_ENV}]`);
   });
 
   async function shutdown(signal: string) {
@@ -47,7 +44,7 @@ console.log('Purge toutes les 24heures des refresh tokens expirés lancée');
 
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
-  process.on('unhandledRejection', (reason) => console.error('UnhandledRejection:', reason));
+  process.on('unhandledRejection', (reason) => logger.error('UnhandledRejection:', reason));
 }
 
 main().catch(console.error);

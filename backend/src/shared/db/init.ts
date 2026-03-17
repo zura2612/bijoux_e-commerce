@@ -103,8 +103,6 @@ export function initDb(): void {
    );
 
   `);
-
-console.log('  init.ts Base de données initialisée :', env.DB_PATH);
 }
 
 // Exécution directe (npm run db:init)

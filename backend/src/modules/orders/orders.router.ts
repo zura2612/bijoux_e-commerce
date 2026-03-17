@@ -6,7 +6,6 @@ import { AppError, asyncHandler } from '../../shared/errors/AppError';
 import { sendOrderConfirmation } from '../mailer/mailer.service';
 import { formatAddress } from '../addresses/addresses.router';
 import { z } from 'zod';
-import { v4 as uuid } from 'uuid';
 import { logger } from '../../shared/utils/logger';
 import type { CartItemRow, ProductRow, OrderCounterRow } from '../../shared/db/db.types';
 
@@ -53,10 +52,7 @@ ordersRouter.post('/checkout', asyncHandler(async (req: Request, res: Response) 
     addressText = formatAddress(payload);
   }
 
-  // 2. Récupérer le panier
-/*  const cartItems = db.prepare(`
-    SELECT ci.product_id, ci.quantity, p.price_cents, p.name, p.stock
-    FROM cart_items ci JOIN products p ON p.id = ci.product_id WHERE ci.user_id = ? `).all(userId) as any[];*/
+// 2. Récupérer le panier
 type CartWithProduct = Pick<CartItemRow, 'product_id' | 'quantity'>
   & Pick<ProductRow, 'price_cents' | 'name' | 'stock'>;
 const cartItems = db.prepare(`
@@ -67,7 +63,7 @@ const cartItems = db.prepare(`
 
   if (cartItems.length === 0) throw new AppError(400, 'Panier vide');
 
-  // 3. Transaction : vérification stock + création commande atomique
+// 3. Transaction : vérification stock + création commande atomique
   const result = db.transaction(() => {
     const verifiedItems = cartItems.map((item: any) => {
       if (item.stock < item.quantity)
@@ -86,20 +82,13 @@ const cartItems = db.prepare(`
 
     const totalCents = verifiedItems.reduce((s: number, i: any) => s + i.unitPriceCents * i.quantity, 0);
 
-//  const orderId = uuid();
 //  GÉNÉRATION DU NUMÉRO DE COMMANDE SÉQUENTIEL PAR ANNÉE
-//    const year = new Date().getFullYear();
-  
-// Incrémenter le compteur de manière atomique dans la transaction
-//   const counter = db.transaction(() => {
-//   const current = db.prepare('SELECT counter FROM order_counters WHERE year = ?').get(year) as { counter: number } | undefined;
+     const year = new Date().getFullYear();     
      const current = db.prepare('SELECT counter FROM order_counters WHERE year = ?').get<Pick<OrderCounterRow, 'counter'>>(year);
      const next = current ? current.counter + 1 : 1;
      db.prepare('INSERT OR REPLACE INTO order_counters (year, counter) VALUES (?, ?)').run(year, next);
-//     return next;
-//    })();
 // Format: 2026-00345 par exemple donc pas plus de 99 999 commandes dans l'année...
-  const orderId = `${year}-${String(counter).padStart(5, '0')}`;
+    const orderId = `${year}-${String(next).padStart(5, '0')}`;
 
     db.prepare(`
       INSERT INTO orders (id, user_id, status, total_cents, address)
@@ -119,7 +108,7 @@ const cartItems = db.prepare(`
     return { orderId, totalCents, verifiedItems };
   })();
 
-  // 4. Email de confirmation (non-bloquant)
+// 4. Email de confirmation (non-bloquant)
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as any;
   const emailSent = await sendOrderConfirmation({
     customerEmail: user.email,
@@ -131,7 +120,6 @@ const cartItems = db.prepare(`
     totalCents: result.totalCents,
     address: addressText,
     });
-//console.log('orders.router.ts emailSent=', emailSent);
 logger.info('orders.router.ts Checkout terminé', { orderId: result.orderId, emailSent });
 
   res.status(201).json({

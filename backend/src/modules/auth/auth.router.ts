@@ -9,7 +9,7 @@ import {
 } from '../../shared/tokens/tokens.service';
 import { requireAuth } from '../../shared/middleware/auth.middleware';
 import { env } from '../../config/env';
-import { v4 as uuid } from 'uuid';
+//import { v4 as uuid } from 'uuid';
 import { hashToken } from '../../shared/tokens/tokens.service';
 import type { UserRow } from '../../shared/db/db.types';
 
@@ -25,8 +25,8 @@ function blacklistToken(token: string, expiresInDays = 7): void {
 // Fonction utilitaire — vérifier si un token est blacklisté
 function isBlacklisted(token: string): boolean {
   const row = db.prepare(
-    'SELECT token_hash FROM refresh_token_blacklist WHERE token_hash = ? AND expires_at > datetime("now")'
-  ).get(hashToken(token));
+    'SELECT token_hash FROM refresh_token_blacklist WHERE token_hash = ? AND expires_at > ?'
+  ).get(hashToken(token), new Date().toISOString());
   return !!row;
 }
 
@@ -40,7 +40,7 @@ function setRefreshCookie(res: Response, refreshToken: string): void {
     secure: isProd(),
     sameSite: 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000,
-    // Pas de path restrictif — accessible sur toutes les routes /api
+// Pas de path restrictif — accessible sur toutes les routes /api
   });
 }
 
@@ -138,7 +138,7 @@ authRouter.post('/refresh', asyncHandler(async (req: Request, res: Response) => 
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get<UserRow>(payload.userId);
   if (!user) throw new AppError(401, 'Utilisateur introuvable');
 
-  // Rotation : blacklister l'ancien token avant d'en émettre un nouveau
+// Rotation : blacklister l'ancien token avant d'en émettre un nouveau
   blacklistToken(refreshToken);
 
   const tokenPayload = { userId: user.id, email: user.email, role: user.role, firstName: user.first_name };
@@ -151,28 +151,6 @@ authRouter.post('/refresh', asyncHandler(async (req: Request, res: Response) => 
   res.json({ success: true, accessToken: newAccessToken });
 }));
 
-/*authRouter.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
-  const refreshToken = req.cookies?.refresh_token;
-  if (!refreshToken) throw new AppError(401, '/refresh Refresh token manquant');
-  let payload: { userId: string };
-  try {
-    payload = await verifyRefreshToken(refreshToken);
-  } catch {
-    clearAuthCookies(res);
-    throw new AppError(401, '/refresh Refresh token invalide ou expiré');
-  }
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(payload.userId) as any;
-  if (!user) throw new AppError(401, '/refresh Utilisateur introuvable');
-
-  const tokenPayload = { userId: user.id, email: user.email, role: user.role, firstName: user.first_name };
-  const [newAccessToken, newRefreshToken] = await Promise.all([
-    signAccessToken(tokenPayload),
-    signRefreshToken({ userId: user.id }),
-  ]);
-  setRefreshCookie(res, newRefreshToken);
-  res.json({ success: true, accessToken: newAccessToken });
-}));*/
-
 // POST /api/auth/logout
 //console.log('auth.router.ts POST /api/auth/logout');
 authRouter.post('/logout', (req: Request, res: Response) => {
@@ -181,10 +159,6 @@ authRouter.post('/logout', (req: Request, res: Response) => {
   clearAuthCookies(res);
   res.json({ success: true });
 });
-/*authRouter.post('/logout', (_req: Request, res: Response) => {
-  clearAuthCookies(res);
-  res.json({ success: true });
-});*/
 
 // GET /api/auth/me
 //console.log('auth.router.ts GET /api/auth/me');

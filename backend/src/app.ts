@@ -51,6 +51,19 @@ const allowedOrigins = [env.FRONTEND_URL, env.GROK_FRONTEND_URL].filter(Boolean)
   // Static files (images produits uploadées)
   app.use('/images', express.static('public/images'));
 
+  // Mode maintenance — bloque toutes les routes sauf /api/admin/ et /api/auth/
+  if (env.MAINTENANCE_MODE) {
+    app.use((req, res, next) => {
+      if (req.path.startsWith('/api/admin') || req.path.startsWith('/api/auth')) {
+        return next();
+      }
+      res.status(503).json({
+        success: false,
+        message: 'Site en maintenance. Revenez bientôt.',
+      });
+    });
+  }
+
   // Routes publiques / client
   app.use('/api/auth', authRouter);
   app.use('/api/catalog', catalogRouter);

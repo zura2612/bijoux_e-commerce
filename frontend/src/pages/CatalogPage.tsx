@@ -17,7 +17,7 @@ export function CatalogPage() {
 
   const category = searchParams.get('category') ?? '';
   const page = Number(searchParams.get('page') ?? 1);
-  const PAGE_SIZE = Number(import.meta.env.VITE_CATALOG_PAGE_SIZE ?? 8); // par défaut 8
+  const PAGE_SIZE = Number(import.meta.env.VITE_CATALOG_PAGE_SIZE ?? 8);
 
   useEffect(() => {
     api.get('/catalog/categories').then(({ data }) => setCategories(data.data));
@@ -49,13 +49,11 @@ export function CatalogPage() {
   };
 
   const handlePageChange = (newPage: number) => {
-    // Conserver les filtres actifs en changeant uniquement la page
     setSearchParams(prev => {
       const next = new URLSearchParams(prev);
       next.set('page', String(newPage));
       return next;
     });
-    // Remonter en haut de la liste au changement de page
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -76,10 +74,7 @@ export function CatalogPage() {
                 placeholder="Rechercher..."
                 className="input-field pr-10"
               />
-              <button
-                type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-rose-400"
-              >
+              <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-rose-400">
                 <MagnifyingGlassIcon className="w-5 h-5" />
               </button>
             </div>
@@ -95,9 +90,7 @@ export function CatalogPage() {
                 <button
                   onClick={() => setCategory('')}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                    !category
-                      ? 'bg-rose-100 text-rose-600 font-medium'
-                      : 'hover:bg-stone-100 text-stone-600'
+                    !category ? 'bg-rose-100 text-rose-600 font-medium' : 'hover:bg-stone-100 text-stone-600'
                   }`}
                 >
                   Tous les bijoux
@@ -108,9 +101,7 @@ export function CatalogPage() {
                   <button
                     onClick={() => setCategory(cat.slug)}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                      category === cat.slug
-                        ? 'bg-rose-100 text-rose-600 font-medium'
-                        : 'hover:bg-stone-100 text-stone-600'
+                      category === cat.slug ? 'bg-rose-100 text-rose-600 font-medium' : 'hover:bg-stone-100 text-stone-600'
                     }`}
                   >
                     {cat.name}
@@ -125,7 +116,7 @@ export function CatalogPage() {
         <div className="flex-1">
           {loading ? (
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {[...Array(8)].map((_, i) => (
+              {[...Array(PAGE_SIZE)].map((_, i) => (
                 <div key={i} className="card animate-pulse">
                   <div className="aspect-square bg-stone-100" />
                   <div className="p-4 space-y-2">
@@ -146,7 +137,6 @@ export function CatalogPage() {
               <p className="text-sm text-stone-400 mb-4">
                 {pagination?.total} résultat{pagination && pagination.total > 1 ? 's' : ''}
               </p>
-
               <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product} />

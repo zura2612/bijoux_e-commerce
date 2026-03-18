@@ -43,6 +43,7 @@ export function AdminCatalog() {
   const [categories, setCategories]   = useState<Category[]>([]);
   const [pagination, setPagination]   = useState<PaginationType | null>(null);
   const [search, setSearch]           = useState(searchParams.get('search') ?? '');
+  const [filterCategory, setFilterCategory] = useState(searchParams.get('category') ?? '');
   const [tab, setTab]                 = useState<'products' | 'categories'>('products');
   const [showForm, setShowForm]       = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
@@ -51,15 +52,16 @@ export function AdminCatalog() {
   const [newCatName, setNewCatName]   = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const page = Math.max(1, Number(searchParams.get('page') ?? 1));
-  const ADMIN_PAGE_SIZE = Number(import.meta.env.VITE_ADMIN_CATALOG_PAGE_SIZE ?? 12);// par défaut 12
+  const [priceInputs, setPriceInputs] = useState<Record<string, string>>({});
 
+  const page = Math.max(1, Number(searchParams.get('page') ?? 1));
+
+  const ADMIN_PAGE_SIZE = Number(import.meta.env.VITE_ADMIN_CATALOG_PAGE_SIZE ?? 12);
 
   const fetchProducts = async (currentPage = page) => {
-//  const params = new URLSearchParams({ page: String(currentPage), limit: '12' });
     const params = new URLSearchParams({ page: String(currentPage), limit: String(ADMIN_PAGE_SIZE) });
-
     if (search) params.set('search', search);
+    if (filterCategory) params.set('category', filterCategory);
     const { data } = await api.get(`/admin/catalog/products?${params}`);
     setProducts(data.data);
     setPagination(data.pagination);
@@ -74,7 +76,7 @@ export function AdminCatalog() {
   useEffect(() => {
     if (!user) return;
     fetchProducts();
-  }, [page, search, user]);
+  }, [page, search, filterCategory, user]);
 
   useEffect(() => {
     if (!user) return;
@@ -170,6 +172,21 @@ export function AdminCatalog() {
     }
   };
 
+  const handlePriceChange = async (id: string, name: string, priceEuros: string) => {
+    const priceCents = Math.round(parseFloat(priceEuros) * 100);
+    if (isNaN(priceCents) || priceCents <= 0) {
+      toast.error('Prix invalide');
+      return;
+    }
+    try {
+      await api.put(`/admin/catalog/products/${id}`, { price_cents: priceCents });
+      toast.success(`Prix de "${name}" mis à jour`);
+      setProducts(ps => ps.map(p => p.id === id ? { ...p, price_cents: priceCents } : p));
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
   const handleToggleNew = async (id: string, name: string, currentIsNew: boolean) => {
     try {
       await api.patch(`/catalog/products/${id}/toggle-new`);
@@ -258,7 +275,32 @@ export function AdminCatalog() {
             <table className="w-full text-sm">
               <thead className="bg-stone-50 border-b border-stone-200">
                 <tr>
-                  {['Image', 'Nom', 'Catégorie', 'Prix', 'Stock', 'Nouveauté', 'Actions'].map(h => (
+                  {['Image', 'Nom'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase">
+                      {h}
+                    </th>
+                  ))}
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase">
+                    <select
+                      value={filterCategory}
+                      onChange={e => {
+                        setFilterCategory(e.target.value);
+                        setSearchParams(prev => {
+                          const next = new URLSearchParams(prev);
+                          if (e.target.value) next.set('category', e.target.value);
+                          else next.delete('category');
+                          return next;
+                        });
+                      }}
+                      className="text-xs font-semibold uppercase tracking-wide text-stone-500 bg-transparent border-0 cursor-pointer hover:text-rose-500 transition-colors pr-1"
+                    >
+                      <option value="">Catégorie</option>
+                      {categories.map(c => (
+                        <option key={c.id} value={c.slug}>{c.name}</option>
+                      ))}
+                    </select>
+                  </th>
+                  {['Prix', 'Stock', 'Nouveauté', 'Actions'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase">
                       {h}
                     </th>
@@ -279,7 +321,27 @@ export function AdminCatalog() {
                     </td>
                     <td className="px-4 py-3 font-medium text-stone-700 max-w-xs truncate">{p.name}</td>
                     <td className="px-4 py-3 text-stone-500">{p.category_name}</td>
-                    <td className="px-4 py-3 font-semibold">{(p.price_cents / 100).toFixed(2)} €</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          step="0.10"
+                          min="0.00"
+                          value={priceInputs[p.id] ?? (p.price_cents / 100).toFixed(2)}
+                          onChange={e => setPriceInputs(prev => ({ ...prev, [p.id]: e.target.value }))}
+                          onBlur={e => {
+                            handlePriceChange(p.id, p.name, e.target.value);
+                            setPriceInputs(prev => {
+                              const next = { ...prev };
+                              delete next[p.id];
+                              return next;
+                            });
+                          }}
+                          className="w-20 border rounded px-2 py-1 text-sm text-right"
+                        />
+                        <span className="text-stone-400 text-sm">€</span>
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <input
                         type="number"
@@ -407,7 +469,7 @@ export function AdminCatalog() {
                   <label className="text-sm font-medium text-stone-600 block mb-1">Prix (€) *</label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="0.10"
                     value={form.price_cents}
                     onChange={e => setForm(f => ({ ...f, price_cents: e.target.value }))}
                     className="input-field"

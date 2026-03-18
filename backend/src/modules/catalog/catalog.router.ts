@@ -39,7 +39,6 @@ catalogRouter.get('/products', asyncHandler(async (req: Request, res: Response) 
   }
 
   const total = (db.prepare(`SELECT COUNT(*) as count FROM (${query})`).get(...params) as any).count;
-console.log('catalog.router.ts total=', total);
   query += ' ORDER BY p.created_at DESC LIMIT ? OFFSET ?';
   params.push(Number(limit), offset);
 

@@ -18,6 +18,7 @@ const EnvSchema = z.object({
   GROK_FRONTEND_URL: z.string().url().optional(),
   SHOP_NAME: z.string().default('nom de la société'),
   SHOP_DESCRIPTION: z.string().default('description'),
+  MAINTENANCE_MODE: z.enum(['true', 'false']).default('false').transform(v => v === 'true'),
 });
 
 const parsed = EnvSchema.safeParse(process.env);

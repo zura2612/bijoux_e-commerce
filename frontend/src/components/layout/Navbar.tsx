@@ -1,19 +1,42 @@
 // fichier frontend/src/components/layout/Navbar.tsx
-import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBagIcon, UserIcon, Bars3Icon } from '@heroicons/react/24/outline';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { ShoppingBagIcon, UserIcon } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../store/auth.store';
 import { useCartStore } from '../../store/cart.store';
 import toast from 'react-hot-toast';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+
+const adminLinks = [
+  { to: '/admin/dashboard', label: 'Tableau de bord' },
+  { to: '/admin/orders',    label: 'Commandes' },
+  { to: '/admin/catalog',   label: 'Catalogue' },
+  { to: '/admin/clients',   label: 'Clients' },
+];
 
 export function Navbar() {
   const { user, logout } = useAuthStore();
   const { cart } = useCartStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const shopName = import.meta.env.VITE_SHOP_NAME || 'société';
 
   const itemCount = cart.items.reduce((s, i) => s + i.quantity, 0);
+
+  // Fermer le menu au clic en dehors
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
+
+  // Fermer le menu au changement de route
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
   const handleLogout = async () => {
     await logout();
@@ -26,7 +49,7 @@ export function Navbar() {
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-       {/*<span className="text-2xl">💍</span> */}
+          {/*<span className="text-2xl">💍</span>*/}
           <span className="font-serif text-xl font-semibold text-stone-800 tracking-wide">
             {shopName}
           </span>
@@ -55,7 +78,7 @@ export function Navbar() {
 
           {/* User défini ou pas */}
           {user ? (
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="flex items-center gap-2 p-2 hover:bg-rose-50 rounded-lg transition-colors text-sm"
@@ -63,33 +86,52 @@ export function Navbar() {
                 <UserIcon className="w-5 h-5 text-stone-600" />
                 <span className="hidden md:block text-stone-700">{user.firstName}</span>
               </button>
+
               {menuOpen && (
-                <div className="absolute right-0 top-12 bg-white border border-stone-100 rounded-xl shadow-lg py-2 w-48 z-50">
-                  {user.role === 'client' && (
-		  <Link to="/orders" className="block px-4 py-2 text-sm hover:bg-rose-50 text-stone-700" onClick={() => setMenuOpen(false)}>
-                    Mes commandes
-                  </Link>
-		  )}
+                <div className="absolute right-0 top-12 bg-white border border-stone-100 rounded-xl shadow-lg py-2 w-52 z-50">
 
-		  {user.role === 'client' && (
-                  <Link to="/addresses" className="block px-4 py-2 text-sm hover:bg-rose-50 text-stone-700" onClick={() => setMenuOpen(false)}>
-                    Mes adresses
-                  </Link>
-		  )}
-
+                  {/* Liens client */}
                   {user.role === 'client' && (
-                  <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-rose-50 text-stone-700" onClick={() => setMenuOpen(false)}>
-                    Mon profil
-                  </Link>
+                    <>
+                      <Link to="/orders" className="block px-4 py-2 text-sm hover:bg-rose-50 text-stone-700">
+                        Mes commandes
+                      </Link>
+                      <Link to="/addresses" className="block px-4 py-2 text-sm hover:bg-rose-50 text-stone-700">
+                        Mes adresses
+                      </Link>
+                      <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-rose-50 text-stone-700">
+                        Mon profil
+                      </Link>
+                    </>
                   )}
 
+                  {/* Liens admin */}
                   {user.role === 'admin' && (
-                    <Link to="/admin" className="block px-4 py-2 text-sm hover:bg-rose-50 text-stone-700" onClick={() => setMenuOpen(false)}>
-                      Administration
-                    </Link>
+                    <>
+                  {/*    <p className="px-4 pt-1 pb-1 text-xs font-semibold uppercase tracking-widest text-stone-400">
+                        Administration
+                      </p> */}
+                      {adminLinks.map(({ to, label }) => (
+                        <Link
+                          key={to}
+                          to={to}
+                          className={`block px-4 py-2 text-sm transition-colors ${
+                            location.pathname === to
+                              ? 'bg-rose-50 text-rose-500 font-medium'
+                              : 'hover:bg-rose-50 text-stone-700'
+                          }`}
+                        >
+                          {label}
+                        </Link>
+                      ))}
+                    </>
                   )}
+
                   <hr className="my-1 border-stone-100" />
-                  <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm hover:bg-rose-50 text-rose-500">
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm hover:bg-rose-50 text-rose-500"
+                  >
                     Se déconnecter
                   </button>
                 </div>

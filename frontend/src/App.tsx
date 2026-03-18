@@ -1,13 +1,13 @@
 // fichier frontend/src/App.tsx
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { AdminLayout } from './components/admin/AdminLayout';
 import {
   HomePage, CatalogPage, ProductPage, CartPage,
   CheckoutPage, OrdersPage, OrderDetailPage, LoginPage, RegisterPage,
-  OrderSuccessPage, AddressesPage, ProfilePage,
+  OrderSuccessPage, AddressesPage, ProfilePage, MaintenancePage,
 } from './pages';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminOrders } from './pages/admin/AdminOrders';
@@ -33,9 +33,18 @@ function AppContent() {
   const location = useLocation();
   const shopName = import.meta.env.VITE_SHOP_NAME;
   const shopDescription = import.meta.env.VITE_SHOP_DESCRIPTION;
+  const [maintenance, setMaintenance] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setMaintenance(true);
+    window.addEventListener('maintenance', handler);
+    return () => window.removeEventListener('maintenance', handler);
+  }, []);
 
   useEffect(() => { fetchMe(); }, []);
   useEffect(() => { if (user) fetchCart(); }, [user]);
+
+  if (maintenance) return <MaintenancePage />;
 
   if (loading) {
     return (
@@ -65,7 +74,8 @@ function AppContent() {
         <Route path="/order-success" element={<OrderSuccessPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-     
+
+        {/* Routes admin — protégées par AdminRoute */}
         <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />

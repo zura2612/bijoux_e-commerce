@@ -41,9 +41,7 @@ api.interceptors.response.use(
   (res) => res,
   async (err) => {
     const original = err.config;
-//    const isAuthRoute = original.url?.includes('/auth/');
-      const isAuthRoute = original.url?.includes('/auth/') || original.url?.includes('/admin/');
-
+    const isAuthRoute = original.url?.includes('/auth/');
     if (err.response?.status === 401 && !original._retried && !isAuthRoute) {
       original._retried = true;
 
@@ -72,6 +70,12 @@ api.interceptors.response.use(
     }
 
     const message = err.response?.data?.message ?? 'Erreur réseau';
+
+    // Mode maintenance — dispatcher un événement global
+    if (err.response?.status === 503) {
+      window.dispatchEvent(new Event('maintenance'));
+    }
+
     return Promise.reject(new Error(message));
   }
 );

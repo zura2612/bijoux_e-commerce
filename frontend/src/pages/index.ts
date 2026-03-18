@@ -1,13 +1,15 @@
-// src/pages/index.ts — re-exports pour faciliter les imports
-export { HomePage } from './HomePage';
-export { CatalogPage } from './CatalogPage';
-export { ProductPage } from './ProductPage';
-export { CartPage } from './CartPage';
-export { CheckoutPage } from './CheckoutPage';
-export { OrdersPage } from './OrdersPage';
-export { OrderDetailPage } from './OrderDetailPage';
-export { LoginPage } from './LoginPage';
-export { RegisterPage } from './RegisterPage';
+// fichier frontend/src/pages/index.ts
+// re-exports pour faciliter les imports
+export { AddressesPage }    from './AddressesPage';
+export { CartPage }         from './CartPage';
+export { CatalogPage }      from './CatalogPage';
+export { CheckoutPage }     from './CheckoutPage';
+export { HomePage }         from './HomePage';
+export { LoginPage }        from './LoginPage';
+export { MaintenancePage }  from './MaintenancePage';
+export { OrderDetailPage }  from './OrderDetailPage';
+export { OrdersPage }       from './OrdersPage';
 export { OrderSuccessPage } from './OrderSuccessPage';
-export { AddressesPage } from './AddressesPage';
-export { ProfilePage } from './ProfilePage';
+export { ProductPage }      from './ProductPage';
+export { ProfilePage }      from './ProfilePage';
+export { RegisterPage }     from './RegisterPage';

@@ -12,6 +12,7 @@ export function HomePage() {
     api.get('/catalog/products?limit=4&nouveautes=true').then(({ data }) => setFeatured(data.data));
   }, []);
 
+// à mettre à jour manuellement si une catégorie est créée
   const categories = [
     { name: 'Colliers', slug: 'colliers', emoji: '📿' },
     { name: 'Bracelets', slug: 'bracelets', emoji: '💫' },

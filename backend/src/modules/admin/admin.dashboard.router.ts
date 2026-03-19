@@ -1,3 +1,4 @@
+// fichier backend/src/modules/admin/admin.dashboard.router.ts
 import { Router, Request, Response } from 'express';
 import { db } from '../../shared/db/init';
 import { requireAdmin } from '../../shared/middleware/auth.middleware';
@@ -7,13 +8,12 @@ export const adminDashboardRouter = Router();
 adminDashboardRouter.use(requireAdmin);
 
 // GET /api/admin/dashboard
-console.log('admin.dashboard.router.ts GET /api/admin/dashboard');
 adminDashboardRouter.get('/', asyncHandler(async (_req: Request, res: Response) => {
-  // Chiffre d'affaires aujourd'hui
+  // Chiffre d'affaires aujourd'hui (paid, preparing, shipped, delivered)
   const caToday = (db.prepare(`
     SELECT COALESCE(SUM(total_cents), 0) as total
     FROM orders
-    WHERE status != 'cancelled'
+    WHERE status NOT IN ('pending', 'cancelled')
     AND date(created_at) = date('now')
   `).get() as any).total;
 
@@ -21,7 +21,7 @@ adminDashboardRouter.get('/', asyncHandler(async (_req: Request, res: Response) 
   const caMonth = (db.prepare(`
     SELECT COALESCE(SUM(total_cents), 0) as total
     FROM orders
-    WHERE status != 'cancelled'
+    WHERE status NOT IN ('pending', 'cancelled')
     AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')
   `).get() as any).total;
 
@@ -48,7 +48,7 @@ adminDashboardRouter.get('/', asyncHandler(async (_req: Request, res: Response) 
     FROM order_items oi
     JOIN products p ON p.id = oi.product_id
     JOIN orders o ON o.id = oi.order_id
-    WHERE o.status != 'cancelled'
+    WHERE o.status NOT IN ('pending', 'cancelled')
     GROUP BY p.id
     ORDER BY total_sold DESC
     LIMIT 5
@@ -60,7 +60,7 @@ adminDashboardRouter.get('/', asyncHandler(async (_req: Request, res: Response) 
            SUM(total_cents) as total,
            COUNT(*) as count
     FROM orders
-    WHERE status != 'cancelled'
+    WHERE status NOT IN ('pending', 'cancelled')
     AND created_at >= date('now', '-30 days')
     GROUP BY date(created_at)
     ORDER BY day ASC

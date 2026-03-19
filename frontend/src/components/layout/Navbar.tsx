@@ -56,7 +56,7 @@ export function Navbar() {
         </Link>
 
         {/* Nav desktop Catalogue Colliers Bracelets Boucles Bagues */}
-        <div className="hidden md:flex items-center gap-6 text-sm font-medium text-stone-800">
+        <div className="hidden md:flex items-center gap-6 text-xl font-medium text-stone-800">
           <Link to="/catalog" className="hover:text-rose-500 transition-colors">Catalogue</Link>
           <Link to="/catalog?category=colliers" className="hover:text-rose-500 transition-colors">Colliers</Link>
           <Link to="/catalog?category=bracelets" className="hover:text-rose-500 transition-colors">Bracelets</Link>
@@ -81,7 +81,7 @@ export function Navbar() {
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="flex items-center gap-2 p-2 hover:bg-rose-50 rounded-lg transition-colors text-sm"
+                className="flex items-center gap-2 p-2 hover:bg-rose-50 rounded-lg transition-colors font-medium text-xl"
               >
                 <UserIcon className="w-5 h-5 text-stone-600" />
                 <span className="hidden md:block text-stone-700">{user.firstName}</span>

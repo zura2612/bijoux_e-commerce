@@ -413,17 +413,21 @@ export function AdminCatalog() {
           </div>
           <div className="divide-y divide-stone-100">
             {categories.map(cat => (
-              <div key={cat.id} className="flex items-center justify-between py-3">
-                <div>
-                  <p className="font-medium text-stone-700">{cat.name}</p>
-                  <p className="text-xs text-stone-400">{cat.slug} — {cat.product_count} produit(s)</p>
+              <div key={cat.id} className="flex items-center py-3">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <p className="font-medium text-stone-700">{cat.name}</p>
+                    <p className="text-xs text-stone-400">{cat.slug} — {cat.product_count} produit(s)</p>
+                  </div>
+                  {cat.product_count === 0 && (
+                    <button
+                      onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                      className="text-rose-400 hover:text-red-500 transition-colors"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
-                <button
-                  onClick={() => handleDeleteCategory(cat.id, cat.name)}
-                  className="text-stone-300 hover:text-red-400 transition-colors"
-                >
-                  <TrashIcon className="w-4 h-4" />
-                </button>
               </div>
             ))}
           </div>

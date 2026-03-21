@@ -1,6 +1,6 @@
 // fichier backend/src/modules/catalog/catalog.router.ts
 import { Router, Request, Response } from 'express';
-import { db } from '../../shared/db/init';
+import { db } from '../../infrastructure/db/init';
 import { asyncHandler } from '../../shared/errors/AppError';
 import { requireAdmin } from '../../shared/middleware/auth.middleware';
 import { z } from 'zod';

@@ -1,6 +1,6 @@
 // fichier backend/src/modules/cart/cart.router.ts
 import { Router, Request, Response } from 'express';
-import { db } from '../../shared/db/init';
+import { db } from '../../infrastructure/db/init';
 import { requireAuth } from '../../shared/middleware/auth.middleware';
 import { AppError, asyncHandler } from '../../shared/errors/AppError';
 import { z } from 'zod';

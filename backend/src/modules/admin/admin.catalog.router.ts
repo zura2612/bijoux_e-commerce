@@ -1,8 +1,9 @@
+// fichier backend/src/modules/admin/admin.catalog.router.ts
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { db } from '../../shared/db/init';
+import { db } from '../../infrastructure/db/init';
 import { requireAdmin } from '../../shared/middleware/auth.middleware';
 import { AppError, asyncHandler } from '../../shared/errors/AppError';
 import { z } from 'zod';

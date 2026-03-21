@@ -2,7 +2,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import { db } from '../../shared/db/init';
+import { db } from '../../infrastructure/db/init';
 import { requireAuth } from '../../shared/middleware/auth.middleware';
 import { AppError, asyncHandler } from '../../shared/errors/AppError';
 

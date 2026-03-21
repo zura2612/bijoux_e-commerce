@@ -1,5 +1,6 @@
 // fichier backend/src/shared/tokens/tokens.service.ts
 import { SignJWT, jwtVerify } from 'jose';
+import { v4 as uuid } from 'uuid';
 import { env } from '../../config/env';
 import { createHash } from 'crypto';
 
@@ -38,6 +39,7 @@ export async function signRefreshToken(payload: Pick<TokenPayload, 'userId'>): P
   return new SignJWT({ userId: payload.userId })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
+    .setJti(uuid())
     .setExpirationTime(`${parseDuration(env.JWT_REFRESH_EXPIRES)}s`)
     .sign(refreshSecret);
 }

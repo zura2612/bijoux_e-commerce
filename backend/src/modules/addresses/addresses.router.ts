@@ -1,8 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { db } from '../../shared/db/init';
+import { db } from '../../infrastructure/db/init';
 import { requireAuth } from '../../shared/middleware/auth.middleware';
 import { AppError, asyncHandler } from '../../shared/errors/AppError';
 import { z } from 'zod';
+import { formatAddress } from '../../shared/utils/address.utils';
 
 export const addressesRouter = Router();
 addressesRouter.use(requireAuth);
@@ -18,17 +19,6 @@ const AddressSchema = z.object({
   country:     z.string().min(1).default('France'),
   is_default:  z.boolean().optional().default(false),
 });
-
-// Formate une adresse en texte (utilisé lors du checkout)
-export function formatAddress(a: any): string {
-  return [
-    `${a.first_name} ${a.last_name}`,
-    a.line1,
-    a.line2 || null,
-    `${a.postal_code} ${a.city}`,
-    a.country,
-  ].filter(Boolean).join('\n');
-}
 
 // GET /api/addresses
 addressesRouter.get('/', asyncHandler(async (req: Request, res: Response) => {

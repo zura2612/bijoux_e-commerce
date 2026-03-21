@@ -2,8 +2,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../errors/AppError';
 import { verifyAccessToken, type TokenPayload } from '../tokens/tokens.service';
-import { db } from '../db/init';
-import type { UserRow } from '../db/db.types';
+import { db } from '../../infrastructure/db/init';
+import type { UserRow } from '../../infrastructure/db/db.types';
 
 declare global {
   namespace Express {

@@ -1,8 +1,8 @@
 // fichier backend/src/server.ts
 import { createServer } from 'http';
 import { createApp } from './app';
-import { initDb, db } from './shared/db/init';
-import { migration2Db } from './shared/db/migration2';
+import { initDb, db } from './infrastructure/db/init';
+import { migration2Db } from './infrastructure/db/migration2';
 import { env } from './config/env';
 import { logger } from './shared/utils/logger';
 

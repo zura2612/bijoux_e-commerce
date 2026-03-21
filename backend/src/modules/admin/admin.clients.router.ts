@@ -1,6 +1,7 @@
+// fichier backend/src/modules/admin/admin.clients.routers.ts
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import { db } from '../../shared/db/init';
+import { db } from '../../infrastructure/db/init';
 import { requireAdmin } from '../../shared/middleware/auth.middleware';
 import { AppError, asyncHandler } from '../../shared/errors/AppError';
 import { z } from 'zod';

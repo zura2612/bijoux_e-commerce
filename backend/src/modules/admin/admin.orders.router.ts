@@ -1,9 +1,11 @@
 // fichier backend/src/modules/admin/admin.orders.router.ts
 import { Router, Request, Response } from 'express';
-import { db } from '../../shared/db/init';
+import { db } from '../../infrastructure/db/init';
 import { requireAdmin } from '../../shared/middleware/auth.middleware';
 import { AppError, asyncHandler } from '../../shared/errors/AppError';
 import { z } from 'zod';
+import type { OrderRow, UserRow } from '../../infrastructure/db/db.types';
+import { sendShippingNotification } from '../../infrastructure/mailer/mailer.service';
 
 export const adminOrdersRouter = Router();
 adminOrdersRouter.use(requireAdmin);
@@ -20,10 +22,19 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   cancelled: 'Annulée',
 };
 
+// Ligne retournée par la requête liste admin (JOIN orders + users + order_items)
+type AdminOrderRow = OrderRow & Pick<UserRow, 'email' | 'first_name' | 'last_name'> & { items: string };
+
+// Ligne retournée par la requête export CSV
+type CsvOrderRow = Pick<OrderRow, 'id' | 'status' | 'total_cents' | 'created_at' | 'address' | 'tracking_number'>
+  & Pick<UserRow, 'email' | 'first_name' | 'last_name'>;
+
 // GET /api/admin/orders?status=&search=&page=&limit=
 adminOrdersRouter.get('/', asyncHandler(async (req: Request, res: Response) => {
   const { status, search, page = '1', limit = '20' } = req.query;
-  const offset = (Number(page) - 1) * Number(limit);
+  const pageNum  = Math.max(1, Number(page));
+  const limitNum = Math.min(100, Math.max(1, Number(limit)));
+  const offset = (pageNum - 1) * limitNum;
 
   let query = `
     SELECT o.*, u.email, u.first_name, u.last_name,
@@ -47,7 +58,7 @@ adminOrdersRouter.get('/', asyncHandler(async (req: Request, res: Response) => {
   }
 
   query += ' GROUP BY o.id ORDER BY o.created_at DESC LIMIT ? OFFSET ?';
-  params.push(Number(limit), offset);
+  params.push(limitNum, offset);
 
   const countQuery = `
     SELECT COUNT(DISTINCT o.id) as count FROM orders o
@@ -60,8 +71,8 @@ adminOrdersRouter.get('/', asyncHandler(async (req: Request, res: Response) => {
   if (status) countParams.push(status);
   if (search) countParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
 
-  const total = (db.prepare(countQuery).get(...countParams) as any).count;
-  const orders = (db.prepare(query).all(...params) as any[]).map(o => ({
+  const total = (db.prepare(countQuery).get<{ count: number }>(countParams))!.count;
+  const orders = db.prepare(query).all<AdminOrderRow>(params).map(o => ({
     ...o,
     items: JSON.parse(o.items),
     statusLabel: STATUS_LABELS[o.status as OrderStatus] ?? o.status,
@@ -72,9 +83,9 @@ adminOrdersRouter.get('/', asyncHandler(async (req: Request, res: Response) => {
     data: orders,
     pagination: {
       total,
-      page: Number(page),
-      limit: Number(limit),
-      totalPages: Math.ceil(total / Number(limit)),
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum),
     },
     statuses: ORDER_STATUSES.map(s => ({ value: s, label: STATUS_LABELS[s] })),
   });
@@ -86,10 +97,28 @@ adminOrdersRouter.put('/:id/status', asyncHandler(async (req: Request, res: Resp
     status: z.enum(ORDER_STATUSES),
   }).parse(req.body);
 
-  const order = db.prepare('SELECT id FROM orders WHERE id = ?').get(req.params.id);
+  type OrderWithClient = Pick<OrderRow, 'id' | 'tracking_number'>
+    & Pick<UserRow, 'email' | 'first_name' | 'last_name'>;
+
+  const order = db.prepare(`
+    SELECT o.id, o.tracking_number, u.email, u.first_name, u.last_name
+    FROM orders o
+    JOIN users u ON u.id = o.user_id
+    WHERE o.id = ?
+  `).get<OrderWithClient>(req.params.id);
   if (!order) throw new AppError(404, 'Commande introuvable');
 
   db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, req.params.id);
+
+  // Email de notification d'expedition (non-bloquant)
+  if (status === 'shipped') {
+    sendShippingNotification({
+      customerEmail: order.email,
+      customerName: `${order.first_name} ${order.last_name}`.trim(),
+      orderId: req.params.id,
+      trackingNumber: order.tracking_number,
+    });
+  }
 
   res.json({ success: true, status, statusLabel: STATUS_LABELS[status] });
 }));
@@ -100,7 +129,7 @@ adminOrdersRouter.put('/:id/tracking', asyncHandler(async (req: Request, res: Re
     tracking_number: z.string().max(100).nullable(),
   }).parse(req.body);
 
-  const order = db.prepare('SELECT id, status FROM orders WHERE id = ?').get(req.params.id) as any;
+  const order = db.prepare('SELECT id, status FROM orders WHERE id = ?').get<OrderRow>(req.params.id);
   if (!order) throw new AppError(404, 'Commande introuvable');
 
   db.prepare('UPDATE orders SET tracking_number = ? WHERE id = ?')
@@ -117,7 +146,7 @@ adminOrdersRouter.get('/export.csv', asyncHandler(async (_req: Request, res: Res
     FROM orders o
     JOIN users u ON u.id = o.user_id
     ORDER BY o.created_at DESC
-  `).all() as any[];
+  `).all<CsvOrderRow>();
 
   const header = 'ID,Statut,Client,Email,Total (€),Numéro de suivi,Adresse,Date\n';
   const rows = orders.map(o =>

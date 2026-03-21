@@ -1,6 +1,6 @@
 // fichier backend/src/modules/admin/admin.dashboard.router.ts
 import { Router, Request, Response } from 'express';
-import { db } from '../../shared/db/init';
+import { db } from '../../infrastructure/db/init';
 import { requireAdmin } from '../../shared/middleware/auth.middleware';
 import { asyncHandler } from '../../shared/errors/AppError';
 

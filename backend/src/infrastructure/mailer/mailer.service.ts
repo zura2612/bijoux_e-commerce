@@ -1,4 +1,4 @@
-// fichier backend/src/modules/mailer/mailer.service.ts
+// fichier backend/src/infrastructure/mailer/mailer.service.ts
 import nodemailer from 'nodemailer';
 import { env } from '../../config/env';
 import { logger } from '../../shared/utils/logger';
@@ -117,3 +117,78 @@ const text = `
 }
 
 
+
+export interface ShippingNotificationData {
+  customerEmail: string;
+  customerName: string;
+  orderId: string;
+  trackingNumber?: string | null;
+}
+
+export async function sendShippingNotification(data: ShippingNotificationData): Promise<boolean> {
+  const shopName = env.SHOP_NAME;
+  const shopDescription = env.SHOP_DESCRIPTION;
+
+  const trackingBlock = data.trackingNumber
+    ? `<div style="background:#f9f9f9;padding:15px;border-radius:8px;margin:20px 0">
+        <strong>Numéro de suivi :</strong> ${data.trackingNumber}
+       </div>`
+    : '';
+
+  const trackingText = data.trackingNumber
+    ? `\nNuméro de suivi : ${data.trackingNumber}\n`
+    : '';
+
+  const html = `
+  <!DOCTYPE html>
+  <html lang="fr">
+  <head><meta charset="UTF-8"></head>
+  <body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+    <div style="background:grey;padding:30px;text-align:center">
+      <h1 style="color:white;margin:0">${shopName}</h1>
+    </div>
+    <div style="padding:30px">
+      <h2>Bonjour ${data.customerName},</h2>
+      <p>Votre commande a été expédiée !</p>
+
+      <div style="background:#f9f9f9;padding:15px;border-radius:8px;margin:20px 0">
+        <strong>Référence commande :</strong> #${data.orderId}
+      </div>
+
+      ${trackingBlock}
+
+      <p>À bientôt avec ${shopName}</p>
+    </div>
+    <div style="background:#f0e6e8;padding:15px;text-align:center;font-size:0.85em;color:#888">
+      ${shopName} — ${shopDescription}
+    </div>
+  </body>
+  </html>
+  `;
+
+  const text = `
+  ${shopName}
+
+  Bonjour ${data.customerName},
+
+  Votre commande a été expédiée !
+  Référence : #${data.orderId}
+  ${trackingText}
+  À bientôt avec ${shopName}
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: `"${shopName}" <${env.GMAIL_USER}>`,
+      to: data.customerEmail,
+      subject: `Votre commande #${data.orderId} a été expédiée`,
+      html,
+      text,
+    });
+    logger.info('Email expédition envoyé', { orderId: data.orderId, email: data.customerEmail });
+    return true;
+  } catch (error: any) {
+    logger.error('Email expédition problème', { orderId: data.orderId, error: error.message });
+    return false;
+  }
+}

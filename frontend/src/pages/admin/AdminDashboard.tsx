@@ -76,11 +76,11 @@ export function AdminDashboard() {
   const currentMonthLabel = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
   const statCards = [
-    { label: "CA aujourd'hui",   value: fmt(data.caToday), color: 'bg-rose-50 border-black', text: 'text-rose-600' },
-    { label: `CA ${currentMonthLabel}`, value: fmt(data.caMonth), color: 'bg-rose-50 border-black', text: 'text-rose-600' },
-    { label: 'Commandes (mois)', value: data.ordersMonth,  color: 'bg-blue-50 border-black',  text: 'text-blue-600' },
-    { label: 'Total commandes',  value: data.totalOrders,  color: 'bg-blue-50 border-black',  text: 'text-blue-600' },
-    { label: 'Clients inscrits', value: data.totalClients, color: 'bg-green-50 border-black', text: 'text-green-600' },
+    { label: "ventes d'aujourd'hui",   value: fmt(data.caToday), color: 'bg-rose-50 border-black', text: 'text-rose-600' },
+    { label: `ventes de ${currentMonthLabel}`, value: fmt(data.caMonth), color: 'bg-rose-50 border-black', text: 'text-rose-600' },
+    { label: 'Commandes du mois', value: data.ordersMonth,  color: 'bg-blue-50 border-black',  text: 'text-blue-600' },
+    { label: 'Nombre total de commandes',  value: data.totalOrders,  color: 'bg-blue-50 border-black',  text: 'text-blue-600' },
+    { label: 'Nombre de clients inscrits', value: data.totalClients, color: 'bg-green-50 border-black', text: 'text-green-600' },
   ];
 
   // Compléter caByDay avec les jours sans commande
@@ -108,13 +108,13 @@ export function AdminDashboard() {
       <div className="grid lg:grid-cols-2 gap-4">
         {/* CA 30 derniers jours */}
         <div className="bg-white rounded-xl border border-black p-5">
-          <h2 className="font-semibold text-black mb-4">CA — 30 derniers jours</h2>
+          <h2 className="font-semibold text-black mb-4">ventes des 30 derniers jours</h2>
           <div className="relative flex items-end gap-0.5">
             {fullCaByDay.map(d => (
               <div key={d.day} className="h-48 w-4 flex flex-col justify-end items-center group relative">
                 {/* Barre — invisible si total = 0 */}
                 <div
-                    className="w-3 bg-rose-300 hover:bg-rose-500 rounded-t transition-colors"
+                    className="w-3 bg-rose-400 hover:bg-rose-600 rounded-t transition-colors"
                     style={{ height: `${Math.max(1, (d.total / maxCa) * 100)}%` }}
                 />
                 {/* Tooltip — toujours présent */}
@@ -131,7 +131,7 @@ export function AdminDashboard() {
 
         {/* Top produits */}
         <div className="bg-white rounded-xl border border-black p-5">
-          <h2 className="font-semibold text-stone-700 mb-4">Top 5 produits vendus</h2>
+          <h2 className="font-semibold text-black mb-4">Top 5 des produits vendus</h2>
           {data.topProducts.length === 0 ? (
             <p className="text-stone-400 text-sm text-center py-8">Aucune vente enregistrée</p>
           ) : (
@@ -148,7 +148,7 @@ export function AdminDashboard() {
                     <p className="text-sm font-medium text-stone-700 truncate">{p.name}</p>
                     <p className="text-xs text-black">{p.total_sold} vendu{p.total_sold > 1 ? 's' : ''}</p>
                   </div>
-                  <p className="text-sm font-semibold text-rose-500 shrink-0">{fmt(p.revenue_cents)}</p>
+                  <p className="text-sm font-bold text-rose-600 shrink-0">{fmt(p.revenue_cents)}</p>
                 </div>
               ))}
             </div>

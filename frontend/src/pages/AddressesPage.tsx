@@ -1,3 +1,4 @@
+// fichier frontend/src/pages/AddressesPage.tsx
 import { useEffect, useState } from 'react';
 import { api } from '../utils/api';
 import type { Address } from '../types';
@@ -104,7 +105,7 @@ export function AddressesPage() {
       ) : (
         <div className="space-y-3">
           {addresses.map(address => (
-            <div key={address.id} className={`card p-5 ${address.is_default ? 'border-rose-200 bg-rose-50/30' : ''}`}>
+            <div key={address.id} className={`card p-5 ${address.is_default ? 'border-black bg-rose-50/30' : 'border-black'}`}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">

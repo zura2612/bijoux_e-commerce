@@ -86,13 +86,13 @@ export function OrdersPage() {
               };
 
               return (
-                <div key={order.id} className="card p-5">
+                <div key={order.id} className="border-black card p-5">
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <p className="font-mono text-sm font-medium text-stone-700">
                         #{order.id}
                       </p>
-                      <p className="text-xs text-stone-400 mt-0.5">
+                      <p className="text-xs text-black mt-0.5">
                         {new Date(order.created_at).toLocaleDateString('fr-FR', {
                           day: 'numeric', month: 'long', year: 'numeric',
                         })}
@@ -119,7 +119,7 @@ export function OrdersPage() {
 
                   {/* Pied de carte : adresse + lien détail */}
                   <div className="border-t pt-3 mt-3 flex items-center justify-between gap-4">
-                    <p className="text-xs text-stone-400 truncate">
+                    <p className="text-xs text-black truncate">
                       <span className="font-medium">Livraison :</span>{' '}
                       {order.address.replace(/\n/g, ', ')}
                     </p>

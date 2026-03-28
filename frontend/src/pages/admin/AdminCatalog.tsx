@@ -53,6 +53,7 @@ export function AdminCatalog() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [priceInputs, setPriceInputs] = useState<Record<string, string>>({});
+  const [stockInputs, setStockInputs] = useState<Record<string, string>>({});
 
   const page = Math.max(1, Number(searchParams.get('page') ?? 1));
 
@@ -163,6 +164,10 @@ export function AdminCatalog() {
   };
 
   const handleStockChange = async (id: string, name: string, stock: number) => {
+    if (isNaN(stock) || stock < 0) {
+      toast.error('Stock invalide');
+      return;
+    }
     try {
       await api.put(`/admin/catalog/products/${id}/stock`, { stock });
       toast.success(`Stock de "${name}" mis à jour`);
@@ -189,7 +194,7 @@ export function AdminCatalog() {
 
   const handleToggleNew = async (id: string, name: string, currentIsNew: boolean) => {
     try {
-      await api.patch(`/catalog/products/${id}/toggle-new`);
+      await api.patch(`/admin/catalog/products/${id}/toggle-new`);
       setProducts(ps => ps.map(p => p.id === id ? { ...p, is_new: !currentIsNew } : p));
       toast.success(
         currentIsNew
@@ -346,8 +351,16 @@ export function AdminCatalog() {
                       <input
                         type="number"
                         min="0"
-                        value={p.stock}
-                        onChange={e => handleStockChange(p.id, p.name, parseInt(e.target.value))}
+                        value={stockInputs[p.id] ?? String(p.stock)}
+                        onChange={e => setStockInputs(prev => ({ ...prev, [p.id]: e.target.value }))}
+                        onBlur={e => {
+                          handleStockChange(p.id, p.name, parseInt(e.target.value));
+                          setStockInputs(prev => {
+                            const next = { ...prev };
+                            delete next[p.id];
+                            return next;
+                          });
+                        }}
                         className="w-16 border rounded px-2 py-1 text-sm text-center"
                       />
                     </td>

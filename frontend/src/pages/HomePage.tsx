@@ -13,6 +13,7 @@ export function HomePage() {
   }, []);
 
 // à mettre à jour manuellement si une catégorie est créée
+// assurer la cohérence avec backend/../db/seed.ts
   const categories = [
     { name: 'Colliers', slug: 'colliers', emoji: '📿' },
     { name: 'Bracelets', slug: 'bracelets', emoji: '💫' },

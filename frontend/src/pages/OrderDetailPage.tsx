@@ -60,7 +60,7 @@ export function OrderDetailPage() {
   const isCancelled = order.status === 'cancelled';
   const currentStepIndex = getStepIndex(order.status);
   const totalCents = order.items.reduce(
-    (s: number, i: any) => s + i.unit_price_cents * i.quantity, 0
+    (s: number, i: any) => s + i.unitPriceCents * i.quantity, 0
   );
 
   return (
@@ -187,7 +187,7 @@ export function OrderDetailPage() {
                 <p className="text-xs text-stone-400">Qté : {item.quantity}</p>
               </div>
               <p className="font-semibold text-stone-700 shrink-0">
-                {((item.unit_price_cents * item.quantity) / 100).toFixed(2)} €
+                {((item.unitPriceCents * item.quantity) / 100).toFixed(2)} €
               </p>
             </div>
           ))}

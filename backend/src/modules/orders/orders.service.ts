@@ -183,7 +183,7 @@ export function getOrderById(userId: string, orderId: string): OrderWithItems {
   if (!order) throw new AppError(404, 'Commande introuvable');
 
   const items = db.prepare(`
-    SELECT p.name, p.image_url, oi.quantity, oi.unit_price_cents
+    SELECT p.name, p.image_url, oi.quantity, oi.unit_price_cents AS unitPriceCents
     FROM order_items oi
     JOIN products p ON p.id = oi.product_id
     WHERE oi.order_id = ?

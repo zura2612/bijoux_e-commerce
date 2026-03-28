@@ -130,7 +130,7 @@ export function AdminOrders() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl font-semibold text-stone-800">Commandes</h1>
-        <button onClick={handleExport} className="flex items-center gap-2 btn-secondary text-sm">
+        <button onClick={handleExport} className="flex items-center gap-2 btn-secondary text-base border-black">
           <ArrowDownTrayIcon className="w-4 h-4" />
           Exporter CSV
         </button>
@@ -145,7 +145,7 @@ export function AdminOrders() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Email ou nom client..."
-              className="input-field pr-9 text-sm w-56"
+              className="input-field pr-9 text-sm w-56 border-black"
             />
             <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400">
               <MagnifyingGlassIcon className="w-4 h-4" />
@@ -156,21 +156,21 @@ export function AdminOrders() {
         <select
           value={filterStatus}
           onChange={e => handleFilterStatus(e.target.value)}
-          className="input-field text-sm w-48"
+          className="input-field text-sm w-48 border-black"
         >
           <option value="">Tous les statuts</option>
           {statuses.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
 
         {pagination && (
-          <span className="text-sm text-stone-400 self-center">
+          <span className="text-sm text-black self-center">
             {pagination.total} commande{pagination.total > 1 ? 's' : ''}
           </span>
         )}
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black overflow-hidden">
         {loading ? (
           <div className="divide-y divide-stone-100">
             {[...Array(5)].map((_, i) => (
@@ -186,10 +186,10 @@ export function AdminOrders() {
           <div className="p-8 text-center text-stone-400">Aucune commande trouvée</div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-stone-50 border-b border-stone-200">
+            <thead className="bg-stone-50 border-b border-black">
               <tr>
                 {['Réf.', 'Client', 'Date', 'Total', 'Statut', 'Actions'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide">
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wide">
                     {h}
                   </th>
                 ))}
@@ -198,27 +198,27 @@ export function AdminOrders() {
             <tbody className="divide-y divide-stone-100">
               {orders.map(order => (
                 <tr key={order.id} className="hover:bg-stone-50 transition-colors">
-                  <td className="px-4 py-3 font-mono text-xs text-stone-600">
+                  <td className="px-4 py-3 text-sm text-black">
                     #{order.id}
                     {order.tracking_number && (
                       <TruckIcon className="w-3 h-3 inline ml-1.5 text-[#b5838d]" title="Numéro de suivi renseigné" />
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-stone-700">{order.first_name} {order.last_name}</p>
+                    <p className="text-sm text-black">{order.first_name} {order.last_name}</p>
                     <p className="text-xs text-stone-400">{order.email}</p>
                   </td>
-                  <td className="px-4 py-3 text-stone-500 text-xs">
+                  <td className="px-4 py-3 text-black text-sm">
                     {new Date(order.created_at).toLocaleDateString('fr-FR')}
                   </td>
-                  <td className="px-4 py-3 font-semibold text-stone-700">
+                  <td className="px-4 py-3 font-semibold text-black">
                     {(order.total_cents / 100).toFixed(2)} €
                   </td>
                   <td className="px-4 py-3">
                     <select
                       value={order.status}
                       onChange={e => handleStatusChange(order.id, e.target.value)}
-                      className={`text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer ${STATUS_COLORS[order.status] ?? 'bg-stone-100 text-stone-600'}`}
+                      className={`text-sm font-medium px-2 py-1 rounded-full border-0 cursor-pointer ${STATUS_COLORS[order.status] ?? 'bg-stone-100 text-stone-600'}`}
                     >
                       {statuses.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                     </select>
@@ -226,7 +226,7 @@ export function AdminOrders() {
                   <td className="px-4 py-3">
                     <button
                       onClick={() => setSelectedOrder(order)}
-                      className="text-xs text-rose-400 hover:underline"
+                      className="text-sm font-medium text-rose-400 hover:underline"
                     >
                       Détail
                     </button>
@@ -283,13 +283,13 @@ export function AdminOrders() {
 
             {/* Adresse */}
             <div className="mt-3 pt-3 border-t">
-              <p className="text-xs text-stone-400 font-medium mb-1">Adresse de livraison</p>
+              <p className="text-sm text-black font-medium mb-1">Adresse de livraison</p>
               <p className="text-sm text-stone-600 whitespace-pre-line">{selectedOrder.address}</p>
             </div>
 
             {/* Numéro de suivi */}
             <div className="mt-3 pt-3 border-t">
-              <p className="text-xs text-stone-400 font-medium mb-2 flex items-center gap-1.5">
+              <p className="text-sm text-black font-medium mb-2 flex items-center gap-1.5">
                 <TruckIcon className="w-3.5 h-3.5" />
                 Numéro de suivi transporteur
               </p>

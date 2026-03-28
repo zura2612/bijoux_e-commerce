@@ -61,7 +61,7 @@ export function CheckoutPage() {
     }
     setSubmitting(true);
     try {
-      const { data } = await api.post('/orders/checkout', { ...addressPayload, paymentMethod: 'card_mock' });
+      const { data } = await api.post('/orders/checkout', addressPayload);
       await fetchCart();
       toast.success(`Commande #${data.data.orderId} confirmée`);
       navigate('/order-success', { 

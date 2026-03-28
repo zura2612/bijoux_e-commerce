@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { createApp } from './app';
 import { initDb, db } from './infrastructure/db/init';
 import { migration2Db } from './infrastructure/db/migration2';
+import { migrationDb as migration1Db } from './infrastructure/db/migration1';
 import { env } from './config/env';
 import { logger } from './shared/utils/logger';
 
@@ -22,6 +23,7 @@ function scheduleBlacklistCleanup(): void {
 
 async function main() {
   initDb();
+  migration1Db();
   migration2Db();
   scheduleBlacklistCleanup();
 logger.info('l\'initialisation de la base de données terminée avec db/init.ts/initDb()');

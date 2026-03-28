@@ -117,7 +117,7 @@ export function AdminClients() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher par email ou nom..."
-            className="input-field pr-9 text-sm w-72"
+            className="border-black input-field pr-9 text-sm w-72"
           />
           <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400">
             <MagnifyingGlassIcon className="w-4 h-4" />
@@ -131,7 +131,7 @@ export function AdminClients() {
       </form>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black overflow-hidden">
         {loading ? (
           <div className="divide-y divide-stone-100">
             {[...Array(5)].map((_, i) => (
@@ -144,13 +144,13 @@ export function AdminClients() {
             ))}
           </div>
         ) : clients.length === 0 ? (
-          <div className="p-8 text-center text-stone-400">Aucun client trouvé</div>
+          <div className="p-8 text-center text-black">Aucun client trouvé</div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-stone-50 border-b border-stone-200">
+          <table className="w-full text-sm text-black">
+            <thead className="bg-stone-50 border-b border-black">
               <tr>
                 {['Client', 'Email', 'Inscrit le', 'Commandes', 'CA total', 'Statut', 'Actions'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase">
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-black uppercase">
                     {h}
                   </th>
                 ))}
@@ -159,15 +159,15 @@ export function AdminClients() {
             <tbody className="divide-y divide-stone-100">
               {clients.map(client => (
                 <tr key={client.id} className={`hover:bg-stone-50 ${client.blocked ? 'opacity-60' : ''}`}>
-                  <td className="px-4 py-3 font-medium text-stone-700">
+                  <td className="px-4 py-3 font-medium text-black">
                     {client.first_name} {client.last_name}
                   </td>
-                  <td className="px-4 py-3 text-stone-500 text-xs">{client.email}</td>
-                  <td className="px-4 py-3 text-stone-400 text-xs">
+                  <td className="px-4 py-3 text-black text-xs">{client.email}</td>
+                  <td className="px-4 py-3 text-black text-xs">
                     {new Date(client.created_at).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-4 py-3 text-center">{client.order_count}</td>
-                  <td className="px-4 py-3 font-semibold text-stone-700">
+                  <td className="px-4 py-3 font-semibold text-black">
                     {(client.total_spent_cents / 100).toFixed(2)} €
                   </td>
                   <td className="px-4 py-3">
@@ -181,7 +181,7 @@ export function AdminClients() {
                       <button
                         onClick={() => viewHistory(client)}
                         title="Historique des commandes"
-                        className="text-stone-400 hover:text-blue-500 transition-colors"
+                        className="text-black hover:text-blue-500 transition-colors"
                       >
                         <EyeIcon className="w-4 h-4" />
                       </button>
@@ -191,7 +191,7 @@ export function AdminClients() {
                         className={`transition-colors ${
                           client.blocked
                             ? 'text-green-400 hover:text-green-600'
-                            : 'text-stone-400 hover:text-orange-500'
+                            : 'text-black hover:text-red-500'
                         }`}
                       >
                         <LockClosedIcon className="w-4 h-4" />
@@ -199,14 +199,14 @@ export function AdminClients() {
                       <button
                         onClick={() => { setShowResetModal(client); setNewPassword(''); }}
                         title="Réinitialiser le mot de passe"
-                        className="text-stone-400 hover:text-purple-500 transition-colors text-xs font-mono font-bold"
+                        className="text-black hover:text-purple-500 transition-colors text-xs font-mono font-bold"
                       >
                         ••
                       </button>
                       <button
                         onClick={() => handleDelete(client.id, `${client.first_name} ${client.last_name}`)}
                         title="Supprimer le compte"
-                        className="text-stone-400 hover:text-red-500 transition-colors"
+                        className="text-black hover:text-red-500 transition-colors"
                       >
                         <TrashIcon className="w-4 h-4" />
                       </button>

@@ -1,0 +1,18 @@
+
+### Contenu de `.clinerules`
+```markdown
+# Règles du Projet e-commerce-claude
+
+## Stack
+- Frontend: React 18 + TypeScript + Vite + Tailwind
+- Backend: Node.js + Express + SQLite
+- Auth: JWT access/refresh tokens
+
+## Conventions
+- Composants fonctionnels uniquement
+- Hooks personnalisés dans `src/hooks/`
+- Stores Zustand dans `src/store/`
+- API calls via `src/api/axios.instance.ts`
+
+## Skills Disponibles
+- Voir `/skills/` pour des guides spécialisés

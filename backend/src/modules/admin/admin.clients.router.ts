@@ -29,8 +29,10 @@ adminClientsRouter.get('/', asyncHandler(async (req: Request, res: Response) => 
     params.push(`%${search}%`, `%${search}%`, `%${search}%`);
   }
 
+  const countParams: any[] = [];
+  if (search) countParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
   const countQuery = `SELECT COUNT(*) as count FROM users u WHERE u.role = 'client'${search ? ' AND (u.email LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)' : ''}`;
-  const total = (db.prepare(countQuery).get(...params) as any).count;
+  const total = (db.prepare(countQuery).get(...countParams) as any).count;
 
   query += ' GROUP BY u.id ORDER BY u.created_at DESC LIMIT ? OFFSET ?';
   params.push(Number(limit), offset);
@@ -80,9 +82,6 @@ adminClientsRouter.delete('/:id', asyncHandler(async (req: Request, res: Respons
   const user = db.prepare('SELECT id, role FROM users WHERE id = ?').get(req.params.id) as any;
   if (!user) throw new AppError(404, 'Client introuvable');
   if (user.role === 'admin') throw new AppError(403, 'Impossible de supprimer un administrateur');
-
-// Supprimer cette ligne — devenue inutile grâce au ON DELETE CASCADE à la création d'une nouvelle bd
-  db.prepare('DELETE FROM cart_items WHERE user_id = ?').run(req.params.id);
 
   db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
   res.json({ success: true });

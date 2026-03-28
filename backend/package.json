@@ -6,9 +6,10 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "db:init": "tsx src/shared/db/init.ts",
-    "db:seed": "tsx src/shared/db/seed.ts",
-    "db:migration2": "tsx src/shared/db/migration2.ts",
+    "db:init": "tsx src/infrastructure/db/init.ts",
+    "db:seed": "tsx src/infrastructure/db/seed.ts",
+    "db:migration1": "tsx src/infrastructure/db/migration1.ts",
+    "db:migration2": "tsx src/infrastructure/db/migration2.ts",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage"
@@ -42,9 +43,9 @@
     "@types/node": "^20.12.7",
     "@types/nodemailer": "^6.4.15",
     "@types/uuid": "^9.0.8",
+    "@vitest/coverage-v8": "^4.1.1",
     "tsx": "^4.8.2",
     "typescript": "^5.4.5",
-    "vitest": "^2.0.0",
-    "@vitest/coverage-v8": "^2.0.0"
+    "vitest": "^4.1.1"
   }
 }

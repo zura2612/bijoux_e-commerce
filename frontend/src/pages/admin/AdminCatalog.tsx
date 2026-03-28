@@ -194,7 +194,7 @@ export function AdminCatalog() {
 
   const handleToggleNew = async (id: string, name: string, currentIsNew: boolean) => {
     try {
-      await api.patch(`/admin/catalog/products/${id}/toggle-new`);
+      await api.patch(`/catalog/products/${id}/toggle-new`);
       setProducts(ps => ps.map(p => p.id === id ? { ...p, is_new: !currentIsNew } : p));
       toast.success(
         currentIsNew
@@ -231,22 +231,22 @@ export function AdminCatalog() {
 
   return (
     <div className="space-y-6">
-      <h1 className="font-serif text-2xl font-semibold text-stone-800">Catalogue</h1>
+      <h1 className="font-serif text-2xl font-semibold text-black">Catalogue</h1>
 
       {/* Tabs */}
       <div className="flex gap-2">
         <button
           onClick={() => setTab('products')}
-          className={`text-sm px-4 py-2 rounded-lg ${
-            tab === 'products' ? 'bg-rose-400 text-white' : 'bg-white border text-stone-600'
+          className={`border-black text-sm px-4 py-2 rounded-lg ${
+            tab === 'products' ? 'border border-black bg-rose-400 text-white' : 'bg-white border text-black'
           }`}
         >
           Produits
         </button>
         <button
           onClick={() => setTab('categories')}
-          className={`text-sm px-4 py-2 rounded-lg ${
-            tab === 'categories' ? 'bg-rose-400 text-white' : 'bg-white border text-stone-600'
+          className={`border-black text-sm px-4 py-2 rounded-lg ${
+            tab === 'categories' ? 'border border-black bg-rose-400 text-white' : 'bg-white border text-black'
           }`}
         >
           Catégories
@@ -270,15 +270,15 @@ export function AdminCatalog() {
               <PlusIcon className="w-4 h-4" /> Ajouter
             </button>
             {pagination && (
-              <span className="text-sm text-stone-400 self-center">
+              <span className="text-sm text-black self-center">
                 {pagination.total} produit{pagination.total > 1 ? 's' : ''}
               </span>
             )}
           </div>
 
-          <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-black overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-stone-50 border-b border-stone-200">
+              <thead className="bg-stone-50 border-b border-black">
                 <tr>
                   {['Image', 'Nom'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase">
@@ -324,53 +324,17 @@ export function AdminCatalog() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-medium text-stone-700 max-w-xs truncate">{p.name}</td>
-                    <td className="px-4 py-3 text-stone-500">{p.category_name}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          step="0.10"
-                          min="0.00"
-                          value={priceInputs[p.id] ?? (p.price_cents / 100).toFixed(2)}
-                          onChange={e => setPriceInputs(prev => ({ ...prev, [p.id]: e.target.value }))}
-                          onBlur={e => {
-                            handlePriceChange(p.id, p.name, e.target.value);
-                            setPriceInputs(prev => {
-                              const next = { ...prev };
-                              delete next[p.id];
-                              return next;
-                            });
-                          }}
-                          className="w-20 border rounded px-2 py-1 text-sm text-right"
-                        />
-                        <span className="text-stone-400 text-sm">€</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <input
-                        type="number"
-                        min="0"
-                        value={stockInputs[p.id] ?? String(p.stock)}
-                        onChange={e => setStockInputs(prev => ({ ...prev, [p.id]: e.target.value }))}
-                        onBlur={e => {
-                          handleStockChange(p.id, p.name, parseInt(e.target.value));
-                          setStockInputs(prev => {
-                            const next = { ...prev };
-                            delete next[p.id];
-                            return next;
-                          });
-                        }}
-                        className="w-16 border rounded px-2 py-1 text-sm text-center"
-                      />
-                    </td>
+                    <td className="px-4 py-3 text-black max-w-xs truncate">{p.name}</td>
+                    <td className="px-4 py-3 text-black">{p.category_name}</td>
+                    <td className="px-4 py-3 text-black font-medium">{(p.price_cents / 100).toFixed(2)} €</td>
+                    <td className="px-4 py-3 text-black">{String(p.stock)}</td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => handleToggleNew(p.id, p.name, p.is_new ?? false)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full border transition-colors ${
                           p.is_new
                             ? 'bg-rose-100 text-rose-600 border-rose-200 hover:bg-rose-200'
-                            : 'bg-stone-100 text-stone-600 border-stone-200 hover:bg-rose-50 hover:border-rose-200'
+                            : 'bg-stone-100 text-black border-stone-200 hover:bg-rose-50 hover:border-rose-200'
                         }`}
                         title={p.is_new ? 'Retirer le badge nouveauté' : 'Marquer comme nouveauté'}
                       >
@@ -384,10 +348,10 @@ export function AdminCatalog() {
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
                         <button onClick={() => openEdit(p)} className="text-stone-400 hover:text-blue-500">
-                          <PencilIcon className="w-4 h-4" />
+                          <PencilIcon className="text-black w-4 h-4" />
                         </button>
                         <button onClick={() => handleDelete(p.id, p.name)} className="text-stone-400 hover:text-red-500">
-                          <TrashIcon className="w-4 h-4" />
+                          <TrashIcon className="text-black w-4 h-4" />
                         </button>
                       </div>
                     </td>

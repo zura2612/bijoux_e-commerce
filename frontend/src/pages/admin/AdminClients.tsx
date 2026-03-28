@@ -124,7 +124,7 @@ export function AdminClients() {
           </button>
         </div>
         {pagination && (
-          <span className="text-sm text-stone-400 self-center">
+          <span className="text-sm text-black self-center">
             {pagination.total} client{pagination.total > 1 ? 's' : ''}
           </span>
         )}

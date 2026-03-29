@@ -6,6 +6,7 @@ import { AppError, asyncHandler } from '../../shared/errors/AppError';
 import { z } from 'zod';
 import type { OrderRow, UserRow } from '../../infrastructure/db/db.types';
 import { sendShippingNotification } from '../../infrastructure/mailer/mailer.service';
+import { logger } from '../../shared/utils/logger';
 
 export const adminOrdersRouter = Router();
 adminOrdersRouter.use(requireAdmin);
@@ -97,20 +98,55 @@ adminOrdersRouter.put('/:id/status', asyncHandler(async (req: Request, res: Resp
     status: z.enum(ORDER_STATUSES),
   }).parse(req.body);
 
-  type OrderWithClient = Pick<OrderRow, 'id' | 'tracking_number'>
+  // Statuts pour lesquels une annulation restitue le stock
+  // (marchandise encore en entrepôt — avant expédition)
+  const RESTOCKABLE_STATUSES: OrderStatus[] = ['paid', 'preparing'];
+
+  type OrderWithClient = Pick<OrderRow, 'id' | 'status' | 'tracking_number'>
     & Pick<UserRow, 'email' | 'first_name' | 'last_name'>;
 
   const order = db.prepare(`
-    SELECT o.id, o.tracking_number, u.email, u.first_name, u.last_name
+    SELECT o.id, o.status, o.tracking_number, u.email, u.first_name, u.last_name
     FROM orders o
     JOIN users u ON u.id = o.user_id
     WHERE o.id = ?
   `).get<OrderWithClient>(req.params.id);
   if (!order) throw new AppError(404, 'Commande introuvable');
 
-  db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, req.params.id);
+  const shouldRestock =
+    status === 'cancelled' &&
+    RESTOCKABLE_STATUSES.includes(order.status as OrderStatus);
 
-  // Email de notification d'expedition (non-bloquant)
+  if (shouldRestock) {
+    // Transaction atomique : mise à jour statut + restitution stock
+    type OrderItemStock = { product_id: string; quantity: number };
+    const items = db.prepare(`
+      SELECT product_id, quantity
+      FROM order_items
+      WHERE order_id = ?
+    `).all<OrderItemStock>(req.params.id);
+
+    const restockTransaction = db.transaction(() => {
+      db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, req.params.id);
+      const updateStock = db.prepare(
+        'UPDATE products SET stock = stock + ? WHERE id = ?'
+      );
+      for (const item of items) {
+        updateStock.run(item.quantity, item.product_id);
+      }
+    });
+    restockTransaction();
+
+    logger.info('Annulation commande — stock restitué', {
+      orderId: req.params.id,
+      previousStatus: order.status,
+      itemsRestocked: items.length,
+    });
+  } else {
+    db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, req.params.id);
+  }
+
+  // Email de notification d'expédition (non-bloquant)
   if (status === 'shipped') {
     sendShippingNotification({
       customerEmail: order.email,

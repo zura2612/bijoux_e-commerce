@@ -3,17 +3,31 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../../shared/middleware/auth.middleware';
 import { asyncHandler } from '../../shared/errors/AppError';
 import { CheckoutSchema } from './orders.schemas';
-import { checkout, getOrders, getOrderById } from './orders.service';
+import { createOrder, confirmOrder, getOrders, getOrderById } from './orders.service';
 
 export const ordersRouter = Router();
 ordersRouter.use(requireAuth);
 
-// POST /api/orders/checkout
-ordersRouter.post('/checkout', asyncHandler(async (req: Request, res: Response) => {
+// POST /api/orders — Crée la commande en 'pending' (adresse + panier validés, stock réservé)
+ordersRouter.post('/', asyncHandler(async (req: Request, res: Response) => {
   const payload = CheckoutSchema.parse(req.body);
-  const result = await checkout(req.user!.userId, payload);
+  const result = createOrder(req.user!.userId, payload);
 
   res.status(201).json({
+    success: true,
+    data: {
+      orderId: result.orderId,
+      totalCents: result.totalCents,
+      status: 'pending',
+    },
+  });
+}));
+
+// POST /api/orders/:id/confirm — Confirme la commande : décrémente le stock, passe en 'paid'
+ordersRouter.post('/:id/confirm', asyncHandler(async (req: Request, res: Response) => {
+  const result = await confirmOrder(req.user!.userId, req.params.id);
+
+  res.json({
     success: true,
     data: {
       orderId: result.orderId,
@@ -21,8 +35,8 @@ ordersRouter.post('/checkout', asyncHandler(async (req: Request, res: Response) 
       status: 'paid',
       emailSent: result.emailSent,
       message: result.emailSent
-        ? 'Commande enregistrée. Un email de confirmation vous a été envoyé.'
-        : "Commande enregistrée. Une erreur est survenue lors de l'envoi de l'email de confirmation.",
+        ? 'Commande confirmée. Un email de confirmation vous a été envoyé.'
+        : "Commande confirmée. Une erreur est survenue lors de l'envoi de l'email de confirmation.",
     },
   });
 }));

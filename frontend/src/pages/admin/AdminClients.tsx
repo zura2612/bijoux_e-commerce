@@ -82,7 +82,11 @@ export function AdminClients() {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
+  const handleDelete = async (id: string, name: string, orderCount: number) => {
+    if (orderCount > 0) {
+      toast.error(`Impossible de supprimer ${name} : ce client a ${orderCount} commande${orderCount > 1 ? 's' : ''}`);
+      return;
+    }
     if (!confirm(`Supprimer définitivement le compte de ${name} ?`)) return;
     try {
       await api.delete(`/admin/clients/${id}`);
@@ -204,9 +208,16 @@ export function AdminClients() {
                         ••
                       </button>
                       <button
-                        onClick={() => handleDelete(client.id, `${client.first_name} ${client.last_name}`)}
-                        title="Supprimer le compte"
-                        className="text-black hover:text-red-500 transition-colors"
+                        onClick={() => handleDelete(client.id, `${client.first_name} ${client.last_name}`, client.order_count)}
+                        title={client.order_count > 0
+                          ? `Suppression impossible : ${client.order_count} commande${client.order_count > 1 ? 's' : ''} associée${client.order_count > 1 ? 's' : ''}`
+                          : 'Supprimer le compte'}
+                        disabled={client.order_count > 0}
+                        className={`transition-colors ${
+                          client.order_count > 0
+                            ? 'text-black cursor-not-allowed'
+                            : 'text-black hover:text-red-500'
+                        }`}
                       >
                         <TrashIcon className="w-4 h-4" />
                       </button>
@@ -239,29 +250,26 @@ export function AdminClients() {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-between mb-4">
-              <h2 className="font-semibold text-stone-800">
-                Commandes — {selectedClient.first_name} {selectedClient.last_name}
+              <h2 className="font-semibold text-black">
+                Commandes de {selectedClient.first_name} {selectedClient.last_name}
               </h2>
-              <button onClick={() => setSelectedClient(null)} className="text-stone-400 text-xl">×</button>
+              <button onClick={() => setSelectedClient(null)} className="text-black text-xl">×</button>
             </div>
             {clientOrders.length === 0 ? (
               <p className="text-stone-400 text-center py-6">Aucune commande</p>
             ) : (
               <div className="space-y-3">
                 {clientOrders.map((order: any) => (
-                  <div key={order.id} className="border border-stone-100 rounded-xl p-4">
+                  <div key={order.id} className="border border-black rounded-xl p-4">
                     <div className="flex justify-between mb-2">
-                      <span className="font-mono text-xs text-stone-500">#{order.id}</span>
+                      <span className="font-mono text-sm text-black">#{order.id} du {new Date(order.created_at).toLocaleDateString('fr-FR')}</span>
                       <span className="font-bold text-rose-500">
                         {(order.total_cents / 100).toFixed(2)} €
                       </span>
                     </div>
                     {order.items.map((item: any, i: number) => (
-                      <p key={i} className="text-xs text-stone-500">{item.name} ×{item.quantity}</p>
+                      <p key={i} className="text-sm text-black">{item.name} ×{item.quantity}</p>
                     ))}
-                    <p className="text-xs text-stone-400 mt-2">
-                      {new Date(order.created_at).toLocaleDateString('fr-FR')}
-                    </p>
                   </div>
                 ))}
               </div>

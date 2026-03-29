@@ -10,7 +10,12 @@ import type { CheckoutInput } from './orders.schemas';
 
 // ─── Types retournés ──────────────────────────────────────────────────────────
 
-export interface CheckoutResult {
+export interface CreateOrderResult {
+  orderId: string;
+  totalCents: number;
+}
+
+export interface ConfirmOrderResult {
   orderId: string;
   totalCents: number;
   emailSent: boolean;
@@ -37,9 +42,10 @@ export interface PaginatedOrders {
   };
 }
 
-// ─── checkout ─────────────────────────────────────────────────────────────────
+// ─── createOrder ──────────────────────────────────────────────────────────────
+// Crée la commande en 'pending' — stock non décrémenté, panier non vidé
 
-export async function checkout(userId: string, payload: CheckoutInput): Promise<CheckoutResult> {
+export function createOrder(userId: string, payload: CheckoutInput): CreateOrderResult {
   // 1. Résoudre l'adresse de livraison
   let addressText: string;
 
@@ -65,24 +71,17 @@ export async function checkout(userId: string, payload: CheckoutInput): Promise<
 
   if (cartItems.length === 0) throw new AppError(400, 'Panier vide');
 
-  // 3. Transaction atomique : stock + commande + items + vidage panier
+  // 3. Vérification du stock (sans décrémenter)
+  for (const item of cartItems) {
+    if (item.stock < item.quantity)
+      throw new AppError(400, `Stock insuffisant pour "${item.name}"`);
+  }
+
+  // 4. Transaction : numérotation + création commande + items (statut 'pending')
   const result = db.transaction(() => {
-    const verifiedItems = cartItems.map((item) => {
-      if (item.stock < item.quantity)
-        throw new AppError(400, `Stock insuffisant pour "${item.name}"`);
-
-      db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?')
-        .run(item.quantity, item.product_id);
-
-      return {
-        productId: item.product_id,
-        name: item.name,
-        quantity: item.quantity,
-        unitPriceCents: item.price_cents,
-      };
-    });
-
-    const totalCents = verifiedItems.reduce((s, i) => s + i.unitPriceCents * i.quantity, 0);
+    const totalCents = cartItems.reduce(
+      (s, i) => s + i.price_cents * i.quantity, 0
+    );
 
     // Numéro de commande séquentiel par année
     const year = new Date().getFullYear();
@@ -98,20 +97,70 @@ export async function checkout(userId: string, payload: CheckoutInput): Promise<
 
     db.prepare(`
       INSERT INTO orders (id, user_id, status, total_cents, address)
-      VALUES (?, ?, 'paid', ?, ?)
+      VALUES (?, ?, 'pending', ?, ?)
     `).run(orderId, userId, totalCents, addressText);
 
     const insertItem = db.prepare(`
       INSERT INTO order_items (order_id, product_id, quantity, unit_price_cents)
       VALUES (?, ?, ?, ?)
     `);
-    verifiedItems.forEach((item) => {
-      insertItem.run(orderId, item.productId, item.quantity, item.unitPriceCents);
-    });
+    for (const item of cartItems) {
+      insertItem.run(orderId, item.product_id, item.quantity, item.price_cents);
+    }
+
+    return { orderId, totalCents };
+  })();
+
+  logger.info('Commande créée (pending)', { orderId: result.orderId, userId });
+
+  return { orderId: result.orderId, totalCents: result.totalCents };
+}
+
+// ─── confirmOrder ─────────────────────────────────────────────────────────────
+// Confirme la commande : re-vérifie le stock, décrémente, vide le panier, envoie l'email
+
+export async function confirmOrder(
+  userId: string,
+  orderId: string
+): Promise<ConfirmOrderResult> {
+  // 1. Vérifier que la commande existe, appartient à l'utilisateur, et est bien en 'pending'
+  const order = db.prepare(
+    'SELECT * FROM orders WHERE id = ? AND user_id = ?'
+  ).get<OrderRow>(orderId, userId);
+
+  if (!order) throw new AppError(404, 'Commande introuvable');
+  if (order.status !== 'pending')
+    throw new AppError(409, 'Cette commande a déjà été confirmée ou annulée');
+
+  // 2. Récupérer les items de la commande
+  type OrderItemWithStock = {
+    product_id: string;
+    quantity: number;
+    unit_price_cents: number;
+    name: string;
+    stock: number;
+  };
+
+  const items = db.prepare(`
+    SELECT oi.product_id, oi.quantity, oi.unit_price_cents, p.name, p.stock
+    FROM order_items oi
+    JOIN products p ON p.id = oi.product_id
+    WHERE oi.order_id = ?
+  `).all<OrderItemWithStock>(orderId);
+
+  // 3. Transaction atomique : re-vérification stock + décrémentation + statut 'paid' + vidage panier
+  db.transaction(() => {
+    for (const item of items) {
+      if (item.stock < item.quantity)
+        throw new AppError(400, `Stock insuffisant pour "${item.name}" — commande non confirmée`);
+      db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?')
+        .run(item.quantity, item.product_id);
+    }
+
+    db.prepare("UPDATE orders SET status = 'paid', paid_at = ? WHERE id = ?")
+      .run(new Date().toISOString(), orderId);
 
     db.prepare('DELETE FROM cart_items WHERE user_id = ?').run(userId);
-
-    return { orderId, totalCents, verifiedItems };
   })();
 
   // 4. Email de confirmation (non-bloquant)
@@ -119,17 +168,17 @@ export async function checkout(userId: string, payload: CheckoutInput): Promise<
   const emailSent = await sendOrderConfirmation({
     customerEmail: user.email,
     customerName: `${user.first_name} ${user.last_name}`.trim(),
-    orderId: result.orderId,
-    items: result.verifiedItems.map((i) => ({
-      name: i.name, quantity: i.quantity, unitPrice: i.unitPriceCents,
+    orderId,
+    items: items.map(i => ({
+      name: i.name, quantity: i.quantity, unitPrice: i.unit_price_cents,
     })),
-    totalCents: result.totalCents,
-    address: addressText,
+    totalCents: order.total_cents,
+    address: order.address,
   });
 
-  logger.info('Checkout terminé', { orderId: result.orderId, emailSent });
+  logger.info('Commande confirmée (paid)', { orderId, userId, emailSent });
 
-  return { orderId: result.orderId, totalCents: result.totalCents, emailSent };
+  return { orderId, totalCents: order.total_cents, emailSent };
 }
 
 // ─── getOrders ────────────────────────────────────────────────────────────────

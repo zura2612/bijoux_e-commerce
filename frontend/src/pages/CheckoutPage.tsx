@@ -61,15 +61,21 @@ export function CheckoutPage() {
     }
     setSubmitting(true);
     try {
-      const { data } = await api.post('/orders/checkout', addressPayload);
+      // Étape 1 : créer la commande en 'pending'
+      const { data: createData } = await api.post('/orders', addressPayload);
+      const orderId = createData.data.orderId;
+
+      // Étape 2 : confirmer — décrémente le stock, passe en 'paid', envoie l'email
+      const { data: confirmData } = await api.post(`/orders/${orderId}/confirm`);
       await fetchCart();
-      toast.success(`Commande #${data.data.orderId} confirmée`);
-      navigate('/order-success', { 
-      	state: { 
-          orderId: data.data.orderId, 
-          totalCents: data.data.totalCents,
-          emailSent: data.data.emailSent,
-        } });
+      toast.success(`Commande #${orderId} confirmée`);
+      navigate('/order-success', {
+        state: {
+          orderId,
+          totalCents: confirmData.data.totalCents,
+          emailSent: confirmData.data.emailSent,
+        },
+      });
     } catch (err: any) { toast.error(err.message); }
     finally { setSubmitting(false); }
   };
@@ -81,7 +87,7 @@ export function CheckoutPage() {
         <div className="md:col-span-2 space-y-5">
 
           {/* Adresse */}
-          <div className="card p-6">
+          <div className="border-black card p-6">
             <div className="flex items-center gap-2 mb-4">
               <MapPinIcon className="w-5 h-5 text-rose-400" />
               <h2 className="font-semibold text-stone-800">Adresse de livraison</h2>
@@ -162,7 +168,7 @@ ${addressMode === 'saved' ? 'bg-rose-400 text-white border-rose-400' : 'text-sto
           </div>
 
           {/* Paiement simulé */}
-          <div className="card p-6">
+          <div className="border-black card p-6">
             <div className="flex items-center gap-2 mb-4">
               <h2 className="font-semibold text-stone-800">Paiement</h2>
               <span className="badge bg-amber-100 text-amber-600 ml-auto">Mode simulation</span>
@@ -193,7 +199,7 @@ ${addressMode === 'saved' ? 'bg-rose-400 text-white border-rose-400' : 'text-sto
         </div>
 
         {/* Récap */}
-        <div className="card p-6 h-fit">
+        <div className="border-black card p-6 h-fit">
           <h2 className="font-semibold text-stone-800 mb-4">Votre commande</h2>
           <div className="space-y-2 text-sm mb-4">
             {cart.items.map(item => (
@@ -212,7 +218,7 @@ ${addressMode === 'saved' ? 'bg-rose-400 text-white border-rose-400' : 'text-sto
             <LockClosedIcon className="w-4 h-4" />
             {submitting ? 'Traitement...' : 'Confirmer la commande'}
           </button>
-          <p className="text-xs text-stone-400 text-center mt-3">Paiement sécurisé simulé</p>
+          <p className="text-xs text-black text-center mt-3">Paiement sécurisé simulé</p>
         </div>
       </div>
     </div>

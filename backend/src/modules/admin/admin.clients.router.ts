@@ -83,7 +83,29 @@ adminClientsRouter.delete('/:id', asyncHandler(async (req: Request, res: Respons
   if (!user) throw new AppError(404, 'Client introuvable');
   if (user.role === 'admin') throw new AppError(403, 'Impossible de supprimer un administrateur');
 
-  db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
+  // Bloquer si des commandes actives existent (hors annulées)
+  const activeCount = (db.prepare(
+    "SELECT COUNT(*) as count FROM orders WHERE user_id = ? AND status != 'cancelled'"
+  ).get(req.params.id) as any).count;
+  if (activeCount > 0)
+    throw new AppError(409, `Impossible de supprimer ce client : ${activeCount} commande${activeCount > 1 ? 's' : ''} active${activeCount > 1 ? 's' : ''}`);
+
+  // Transaction : purge des commandes annulées + items orphelins + utilisateur
+  db.transaction(() => {
+    const cancelledOrders = db.prepare(
+      "SELECT id FROM orders WHERE user_id = ? AND status = 'cancelled'"
+    ).all(req.params.id) as { id: string }[];
+
+    if (cancelledOrders.length > 0) {
+      const placeholders = cancelledOrders.map(() => '?').join(',');
+      const orderIds = cancelledOrders.map(o => o.id);
+      db.prepare(`DELETE FROM order_items WHERE order_id IN (${placeholders})`).run(...orderIds);
+      db.prepare(`DELETE FROM orders WHERE id IN (${placeholders})`).run(...orderIds);
+    }
+
+    db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
+  })();
+
   res.json({ success: true });
 }));
 

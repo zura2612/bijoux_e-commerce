@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingBagIcon, UserIcon } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../store/auth.store';
 import { useCartStore } from '../../store/cart.store';
+import { useCategoryStore, CATEGORY_EMOJIS } from '../../store/category.store';
 import toast from 'react-hot-toast';
 import { useState, useRef, useEffect } from 'react';
 
@@ -16,13 +17,19 @@ const adminLinks = [
 export function Navbar() {
   const { user, logout } = useAuthStore();
   const { cart } = useCartStore();
+  const { categories, fetchCategories } = useCategoryStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const shopName = import.meta.env.VITE_SHOP_NAME || 'société';
+  const maxNavCategories = Number(import.meta.env.VITE_NAV_MAX_CATEGORIES) || 4;
 
   const itemCount = cart.items.reduce((s, i) => s + i.quantity, 0);
+  const visibleCategories = categories.slice(0, maxNavCategories);
+  const hasMore = categories.length > maxNavCategories;
+
+  useEffect(() => { fetchCategories(); }, []);
 
   // Fermer le menu au clic en dehors
   useEffect(() => {
@@ -55,13 +62,23 @@ export function Navbar() {
           </span>
         </Link>
 
-        {/* Nav desktop Catalogue Colliers Bracelets Boucles Bagues */}
+        {/* Nav desktop — catégories dynamiques (max VITE_NAV_MAX_CATEGORIES, défaut 4) */}
         <div className="hidden md:flex items-center gap-6 text-xl font-medium text-stone-800">
           <Link to="/catalog" className="hover:text-rose-500 transition-colors">Catalogue</Link>
-          <Link to="/catalog?category=colliers" className="hover:text-rose-500 transition-colors">Colliers</Link>
-          <Link to="/catalog?category=bracelets" className="hover:text-rose-500 transition-colors">Bracelets</Link>
-          <Link to="/catalog?category=boucles-oreilles" className="hover:text-rose-500 transition-colors">Boucles</Link>
-          <Link to="/catalog?category=bagues" className="hover:text-rose-500 transition-colors">Bagues</Link>
+          {visibleCategories.map((cat) => (
+            <Link
+              key={cat.slug}
+              to={`/catalog?category=${cat.slug}`}
+              className="hover:text-rose-500 transition-colors"
+            >
+              {CATEGORY_EMOJIS[cat.slug] ? `${CATEGORY_EMOJIS[cat.slug]} ` : ''}{cat.name}
+            </Link>
+          ))}
+          {hasMore && (
+            <Link to="/catalog" className="hover:text-rose-500 transition-colors text-black">
+              +
+            </Link>
+          )}
         </div>
 
         {/* Actions Panier Connexion */}

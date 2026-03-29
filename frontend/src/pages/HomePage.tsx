@@ -3,23 +3,19 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { api } from '../utils/api';
 import { ProductCard } from '../components/catalog/ProductCard';
+import { useCategoryStore, CATEGORY_EMOJIS } from '../store/category.store';
 import type { Product } from '../types';
 
 export function HomePage() {
   const [featured, setFeatured] = useState<Product[]>([]);
+  const { categories, error: catError, fetchCategories } = useCategoryStore();
 
   useEffect(() => {
-    api.get('/catalog/products?limit=4&nouveautes=true').then(({ data }) => setFeatured(data.data));
+    api.get('/catalog/products?limit=4&nouveautes=true')
+      .then(({ data }) => setFeatured(data.data));
   }, []);
 
-// à mettre à jour manuellement si une catégorie est créée
-// assurer la cohérence avec backend/../db/seed.ts
-  const categories = [
-    { name: 'Colliers', slug: 'colliers', emoji: '📿' },
-    { name: 'Bracelets', slug: 'bracelets', emoji: '💫' },
-    { name: 'Boucles d\'oreilles', slug: 'boucles-oreilles', emoji: '✨' },
-    { name: 'Bagues', slug: 'bagues', emoji: '💍' },
-  ];
+  useEffect(() => { fetchCategories(); }, []);
 
   return (
     <div>
@@ -43,20 +39,29 @@ export function HomePage() {
         <h2 className="font-serif text-2xl font-semibold text-stone-800 mb-6 text-center">
           Nos collections
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {categories.map((cat) => (
-            <Link
-              key={cat.slug}
-              to={`/catalog?category=${cat.slug}`}
-              className="card p-6 text-center hover:shadow-md transition-shadow group"
-            >
-              <div className="text-4xl mb-3">{cat.emoji}</div>
-              <p className="font-medium text-stone-700 group-hover:text-rose-500 transition-colors">
-                {cat.name}
-              </p>
-            </Link>
-          ))}
-        </div>
+        {catError ? (
+          <p className="text-center text-red-400 text-sm">
+            Impossible de charger les collections. Veuillez réessayer plus tard.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {categories.map((cat) => {
+              const emoji = CATEGORY_EMOJIS[cat.slug];
+              return (
+                <Link
+                  key={cat.slug}
+                  to={`/catalog?category=${cat.slug}`}
+                  className="card p-6 text-center hover:shadow-md transition-shadow group"
+                >
+                  {emoji && <div className="text-4xl mb-3">{emoji}</div>}
+                  <p className="font-medium text-stone-700 group-hover:text-rose-500 transition-colors">
+                    {cat.name}
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Nouveautés */}

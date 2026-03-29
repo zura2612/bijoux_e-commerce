@@ -374,7 +374,7 @@ export function AdminCatalog() {
 
       {/* Onglet Catégories */}
       {tab === 'categories' && (
-        <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-4">
+        <div className="bg-white rounded-xl border border-black p-5 space-y-4">
           <div className="flex gap-3">
             <input
               type="text"
@@ -393,8 +393,8 @@ export function AdminCatalog() {
               <div key={cat.id} className="flex items-center py-3">
                 <div className="flex items-center gap-3">
                   <div>
-                    <p className="font-medium text-stone-700">{cat.name}</p>
-                    <p className="text-xs text-stone-400">{cat.slug} — {cat.product_count} produit(s)</p>
+                    <p className="font-medium text-black">{cat.name}</p>
+                    <p className="text-sm text-black">{cat.product_count} produit(s)</p>
                   </div>
                   {cat.product_count === 0 && (
                     <button
